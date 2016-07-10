@@ -72,5 +72,5 @@ Jane = MkMessage [
 
 testDeserializeFromTextFormatWithOverriddenRequiredField : IO ()
 testDeserializeFromTextFormatWithOverriddenRequiredField = assertEq
-  (deserializeFromTextFormat (johnInTextFormat ++ "\nname: \"Jane Doe\""))
+  (deserializeFromTextFormat (johnInTextFormat ++ "name: \"Jane Doe\""))
   (Provide Jane)
