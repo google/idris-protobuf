@@ -34,15 +34,14 @@ public export interface Monad m => Serializer (m : Type -> Type) where
   startMessage : m ()
   endMessage : m ()
 
--- Note: The totality checker doesn't consider this function total.  I think
--- that the problem is that every recursive call is structurally decreasing in
--- the variable d, except for serializeField when d has the form
--- MkFieldDescriptor Repeated _ _.  In that case it is structurally non-increasing
--- in `d` and structurally decreasing in some other variable.
-
 serializeEnum : Serializer m => interpEnum e -> m ()
 serializeEnum {e=MkEnumDescriptor values} x = serializeEnumValue (index x values)
 
+-- Note: The totality checker doesn't consider these functions total.  I think
+-- that the problem is that every recursive call is structurally decreasing in
+-- the variable d, except for serializeField when d has the form
+-- MkFieldDescriptor Repeated _ _.  In that case it is structurally
+-- non-increasing in `d` and structurally decreasing in some other variable.
 mutual
   ||| Serializes a message.
   |||
