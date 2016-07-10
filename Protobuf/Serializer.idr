@@ -34,6 +34,14 @@ public export interface Monad m => Serializer (m : Type -> Type) where
   startMessage : m ()
   endMessage : m ()
 
+||| Does an action for each element of a list.
+forEach : Monad m => (a -> m ()) -> List a -> m ()
+forEach _ Nil       = return ()
+forEach f (x :: xs) = do {
+  f x
+  forEach f xs
+}
+
 serializeEnum : Serializer m => interpEnum e -> m ()
 serializeEnum {e=MkEnumDescriptor values} x = serializeEnumValue (index x values)
 
@@ -74,9 +82,7 @@ mutual
   serializeField {d=MkFieldDescriptor Required _ name} =
     serializeSingularField name
   serializeField {d=MkFieldDescriptor Repeated ty name} =
-    foldr
-      (\x => \acc => ((serializeSingularField {d=ty} name x) >>= \_ => acc))
-      (return ())
+    forEach (serializeSingularField name)
 
   partial serializeFieldValue : Serializer m => interpFieldValue d -> m ()
   serializeFieldValue {d=PBDouble} x    = serializeDouble x
