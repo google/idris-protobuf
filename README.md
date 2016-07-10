@@ -74,3 +74,44 @@ applications of Idris.  Most of the interesting applications are in the `Test`
 directory which contains an example descriptor `Person` along with some
 examples of creating an instance of `InterpMessage Person` and some methods
 to inspect properties.
+
+The `Person` descriptor is given by
+```
+PhoneType : EnumDescriptor
+PhoneType = MkEnumDescriptor [
+  MkEnumValueDescriptor "MOBILE" 0,
+  MkEnumValueDescriptor "HOME" 1,
+  MkEnumValueDescriptor "WORK" 5
+]
+
+PhoneNumber : MessageDescriptor
+PhoneNumber = MkMessageDescriptor [
+  MkFieldDescriptor Required PBString "number",
+  MkFieldDescriptor Optional (PBEnum PhoneType) "type"
+]
+
+Person : MessageDescriptor
+Person = MkMessageDescriptor [
+  MkFieldDescriptor Required PBString "name",
+  MkFieldDescriptor Required PBInt32 "id",
+  MkFieldDescriptor Optional PBString "email",
+  MkFieldDescriptor Repeated (PBMessage PhoneNumber) "phone"
+]
+```
+A example of an element of `InterpMessage Person` is
+```
+John : InterpMessage Person
+John = MkMessage [
+  "John Doe",
+  1234,
+  Just "jdoe@example.com",
+  [
+    MkMessage ["123-456-7890", Just 1],
+    MkMessage ["987-654-3210", Nothing]
+  ]
+]
+```
+Note that the `MkMessage` constructor accepts a heterogeneous list.  This is
+not an `HVect` but a data type we construct in `Protobuf.idr` whose constructors
+are `Nil` and `(::)`, but whose elements have types corresponding to the
+types of the fields given by the message descriptor.
