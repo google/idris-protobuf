@@ -1,0 +1,18 @@
+package protobuf
+
+modules = Protobuf
+        , Protobuf.Deserializer
+        , Protobuf.Serializer
+        , Protobuf.TextFormat
+        , Test.Utils
+        , Test.Protobuf
+        , Test.TextFormat
+
+tests = Test.Protobuf.testGetName
+      , Test.Protobuf.testGetId
+      , Test.Protobuf.testGetEmail
+      , Test.TextFormat.testSerializeToTextFormat
+      , Test.TextFormat.testDeserializeFromTextFormat
+      , Test.TextFormat.testDeserializeFromTextFormatWithBadField
+      , Test.TextFormat.testDeserializeFromTextFormatWithMissingRequiredField
+      , Test.TextFormat.testDeserializeFromTextFormatWithOverriddenRequiredField
