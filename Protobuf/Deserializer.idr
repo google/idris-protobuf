@@ -1,6 +1,6 @@
 module Protobuf.Deserializer
 
-import Protobuf
+import Protobuf.Core
 
 %default total
 

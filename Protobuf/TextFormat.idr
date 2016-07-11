@@ -7,7 +7,7 @@ import Lightyear
 import Lightyear.Char
 import Lightyear.Strings
 
-import Protobuf
+import Protobuf.Core
 import Protobuf.Deserializer
 import Protobuf.Serializer
 

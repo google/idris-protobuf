@@ -115,3 +115,45 @@ Note that the `MkMessage` constructor accepts a heterogeneous list.  This is
 not an `HVect` but a data type we construct in `Protobuf.idr` whose constructors
 are `Nil` and `(::)`, but whose elements have types corresponding to the
 types of the fields given by the message descriptor.
+
+## Installing
+
+### Install the [Lightyear](https://github.com/ziman/lightyear) package.
+This can be done by cloning the repo by running this command from your home
+directory:
+```
+git clone https://github.com/ziman/lightyear
+```
+and installing it with
+```
+cd lightyear
+idris --install lightyear.ipkg
+```
+
+### Clone this repo and run the tests.
+Clone this repo by running the following from your home directory
+```
+git clone https://github.com/google/idris-protobuf
+```
+The `Test` directory contains interesting examples that you might want to modify
+and re-run.  To run the tests run this command from this repo
+```
+cd idris-protobuf
+idris --testpkg protobuf.ipkg
+```
+
+### Experiment in the REPL.  
+In order to load the repl with this package, first install it with the command
+```
+idris --install protobuf.ipkg
+```
+then load the Idris REPL with this package along with the test utils, with the
+command
+```
+idris -p lightyear Protobuf.idr Test/Utils.idr
+```
+While in the REPL you can explore the package, e.g.
+```
+*Test/Utils *Protobuf> deserializeFromTextFormat {d=Person} "name: \"Kester Tong\" id: 1234"
+Right (MkMessage ["Kester Tong", 1234, Nothing, []]) : Either String
+```

@@ -1,7 +1,7 @@
 module Test.TextFormat
 
 import Test.Utils
-import Protobuf
+import Protobuf.Core
 import Protobuf.TextFormat
 
 %access export

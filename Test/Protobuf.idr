@@ -1,7 +1,7 @@
 module Test.Protobuf
 
 import Test.Utils
-import Protobuf
+import Protobuf.Core
 
 %access export
 

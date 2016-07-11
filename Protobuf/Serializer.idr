@@ -1,6 +1,6 @@
 module Protobuf.Serializer
 
-import Protobuf
+import Protobuf.Core
 
 %default total
 
