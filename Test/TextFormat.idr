@@ -38,26 +38,19 @@ implementation (Eq a) => Eq (Provider a) where
 implementation Eq (InterpMessage d) where
   x == y = (show x) == (show y)
 
--- NOTE: since Show (InterpMessage d) is defined using serializeToTextFormat,
--- the following won't output a sensible debug message unless
--- serializeToTextFormat is correctly implemented.
-implementation (Show a) => Show (Provider a) where
-  show (Provide x) = show x
-  show (Error e) = e
-
 testDeserializeFromTextFormat : IO ()
 testDeserializeFromTextFormat = assertEq
-  (deserializeFromTextFormat johnInTextFormat) (Provide John)
+  (deserializeFromTextFormat johnInTextFormat) (Right John)
 
 testDeserializeFromTextFormatWithBadField : IO ()
 testDeserializeFromTextFormatWithBadField = assertEq
   (deserializeFromTextFormat {d=Person} "not_a_field: 1")
-  (Error "There was no field with name \"not_a_field\"")
+  (Left "at 1:14 expected:\n  There was no field with name \"not_a_field\"")
 
 testDeserializeFromTextFormatWithMissingRequiredField : IO ()
 testDeserializeFromTextFormatWithMissingRequiredField = assertEq
   (deserializeFromTextFormat {d=Person} "id: 1234")
-  (Error "The required field \"name\" was not set")
+  (Left "at 0:0 expected:\n  The required field \"name\" was not set")
 
 Jane : InterpMessage Person
 Jane = MkMessage [
@@ -73,4 +66,4 @@ Jane = MkMessage [
 testDeserializeFromTextFormatWithOverriddenRequiredField : IO ()
 testDeserializeFromTextFormatWithOverriddenRequiredField = assertEq
   (deserializeFromTextFormat (johnInTextFormat ++ "name: \"Jane Doe\""))
-  (Provide Jane)
+  (Right Jane)

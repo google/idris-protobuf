@@ -1,5 +1,7 @@
 package protobuf
 
+opts = "-p lightyear"
+
 modules = Protobuf
         , Protobuf.Deserializer
         , Protobuf.Serializer

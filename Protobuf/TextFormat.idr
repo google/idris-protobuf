@@ -1,13 +1,15 @@
 module Protobuf.TextFormat
 
-import Control.Monad.State
 import Data.String
+import Control.Monad.State
+
+import Lightyear
+import Lightyear.Char
+import Lightyear.Strings
 
 import Protobuf
 import Protobuf.Deserializer
 import Protobuf.Serializer
-
-%default total
 
 -- TextPrinter is a state monad that stores the string so far, and the current
 -- indent.
@@ -72,136 +74,61 @@ export implementation Show (InterpMessage d) where
 
 --- We construct an error type
 
--- A text deserializer uses the Provider monad to handle errors, and the state
--- is the fixed string being parsed, along with a cursor into the string.
+-- A text deserializer is a Parser, which which we provide an instance of
+-- Deserializer for.
+
 TextDeserializer : Type -> Type
-TextDeserializer = StateT (Int, String) Provider
-
-returnError : String -> TextDeserializer a
-returnError s = ST (\x => Error s)
-
-partial seek : (pos : Int) -> (cond : Char -> Bool) -> String -> Int
-seek pos cond s =
-  if pos < prim_lenString s then
-    if cond (prim__strIndex s pos) then
-      pos
-    else
-      seek (pos + 1) cond s
-  else
-    pos
-
-skipWhitespace : TextDeserializer ()
-skipWhitespace = assert_total (do {
-  (i, s) <- get
-  put (seek i (\x => not (isSpace x)) s, s)
-})
-
-peek : TextDeserializer (Maybe Char)
-peek = assert_total (do {
-  (i, s) <- get
-  if i >= prim_lenString s then
-    return Nothing
-  else
-    return (Just (prim__strIndex s i))
-})
-
-requireChar : Char -> TextDeserializer ()
-requireChar = assert_total (\c => do {
-  (i, s) <- get
-  if i >= prim_lenString s then
-    returnError ("Reached end of string while searching for " ++ (show c))
-  else
-    let c' = prim__strIndex s i in
-      if c' == c then
-        put (i + 1, s)
-      else
-        returnError ("Expected " ++ (show c) ++ ", got " ++ (show c'))
-})
-
-consumeUpToWhitespaceAndParse : (String -> Maybe a) -> TextDeserializer a
-consumeUpToWhitespaceAndParse  = assert_total (\f => do {
-  (i, s) <- get
-  i' <- return (seek i (\x => isSpace x || x == '}') s)
-  put (i', s)
-  consumed <- return (prim__strSubstr i (i' - i) s)
-  maybe (returnError "Failed to parse double") (\x => return x) (f consumed)
-})
-
-consumeFieldName : TextDeserializer String
-consumeFieldName  = assert_total (do {
-  (i, s) <- get
-  i' <- return (seek i (\x => x == ':') s)
-  put (i', s)
-  return (prim__strSubstr i (i' - i) s)
-})
-
-parseBool : String -> Maybe Bool
-parseBool s =
-  if s == "true" then
-    Just True
-  else
-    if s == "false" then
-      Just False
-    else
-      Nothing
+TextDeserializer = Parser
 
 implementation Deserializer TextDeserializer where
-  deserializeDouble = consumeUpToWhitespaceAndParse parseDouble
-  deserializeFloat = consumeUpToWhitespaceAndParse parseDouble
-  deserializeInt32 = consumeUpToWhitespaceAndParse parseInteger
-  deserializeInt64 = consumeUpToWhitespaceAndParse parseInteger
-  deserializeUInt32 = consumeUpToWhitespaceAndParse parsePositive
-  deserializeUInt64 = consumeUpToWhitespaceAndParse parsePositive
-  deserializeSInt32 = consumeUpToWhitespaceAndParse parseInteger
-  deserializeSInt64 = consumeUpToWhitespaceAndParse parseInteger
-  deserializeFixed32 = consumeUpToWhitespaceAndParse parsePositive
-  deserializeFixed64 = consumeUpToWhitespaceAndParse parsePositive
-  deserializeSFixed32 = consumeUpToWhitespaceAndParse parseInteger
-  deserializeSFixed64 = consumeUpToWhitespaceAndParse parseInteger
-  deserializeBool = consumeUpToWhitespaceAndParse parseBool
-  deserializeString = assert_total (do {
-    requireChar '"'
-    (i, s) <- get
-    i' <- return (seek i (\x => x == '"') s)
-    put (i', s)
-    requireChar '"'
-    return (prim__strSubstr i (i' - i) s)
-  })
+  deserializeDouble = fail "Not Implemented"
+  deserializeFloat = fail "Not Implemented"
+  deserializeInt32 = assert_total $ do {
+    chars <- many (satisfy isDigit)
+    spaces
+    case parseInteger (pack chars) of
+      Nothing => fail "Could not parse Int32"
+      Just x => return x
+  }
+  deserializeInt64 = fail "Not Implemented"
+  deserializeUInt32 = fail "Not Implemented"
+  deserializeUInt64 = fail "Not Implemented"
+  deserializeSInt32 = fail "Not Implemented"
+  deserializeSInt64 = fail "Not Implemented"
+  deserializeFixed32 = fail "Not Implemented"
+  deserializeFixed64 = fail "Not Implemented"
+  deserializeSFixed32 = fail "Not Implemented"
+  deserializeSFixed64 = fail "Not Implemented"
+  deserializeBool = fail "Not Implemented"
+  -- TODO: handle escape codes including \"
+  deserializeString = assert_total $ do {
+    char '"'
+    chars <- many (satisfy (\c => c /= '"'))
+    char '"'
+    spaces
+    return (pack chars)
+  }
   deserializeBytes = deserializeString
 
-  startMessage = do {
-    skipWhitespace
-    requireChar '{'
-  }
+  startMessage = assert_total $ token "{"
 
-  maybeReadFieldNameOrNumber = do {
-    skipWhitespace
-    c <- peek
-    if c == Nothing then do {
-      return Nothing
-    } else if c == Just '}' then do {
-      requireChar '}'
-      return Nothing
-    } else do {
-      name <- consumeFieldName
-      skipWhitespace
-      requireChar ':'
-      skipWhitespace
-      return (Just (Left name))
+  maybeReadFieldNameOrNumber = assert_total $
+    (eof *> return Nothing) <|> (token "}" *> return Nothing)
+    <|> do {
+      chars <- many (satisfy (\c => c /= ':' && not (isSpace c)))
+      spaces
+      token ":"
+      return (Just (Left (pack chars)))
     }
+
+  readEnumValueNameOrNumber = assert_total $ do {
+    chars <- many (satisfy isAlpha)
+    spaces
+    return (Left (pack chars))
   }
 
-  readEnumValueNameOrNumber = do {
-    skipWhitespace
-    name <- consumeUpToWhitespaceAndParse Just
-    return (Left name)
-  }
+  error e = fail (show e)
 
-  error e = returnError (show e)
-
-
-export deserializeFromTextFormat : String -> Provider (InterpMessage d)
-deserializeFromTextFormat {d=d} str = do {
-  (x, state) <- runStateT {s=(Int, String)} (deserializeMessage {m=TextDeserializer} {d=d}) (0, str)
-  return x
-}
+--TODO: strip initial whitespace
+export deserializeFromTextFormat : String -> Either String (InterpMessage d)
+deserializeFromTextFormat {d=d} str = parse (deserializeMessage {m=TextDeserializer} {d=d}) str
