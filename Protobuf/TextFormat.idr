@@ -113,10 +113,10 @@ implementation Deserializer TextDeserializer where
     assert_total $ ((eof <|> token "}") *> return True) <|> (return False)
 
   readFieldNameOrNumber = assert_total $ do {
-      chars <- many (satisfy (\c => c /= ':' && not (isSpace c)))
-      spaces
-      token ":"
-      return (Left (pack chars))
+    chars <- many (satisfy (\c => c /= ':' && not (isSpace c)))
+    spaces
+    token ":"
+    return (Left (pack chars))
   }
 
   readEnumValueNameOrNumber = assert_total $ do {
