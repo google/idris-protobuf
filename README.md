@@ -7,6 +7,8 @@ partial implementation of protocol buffers in the Idris language.  The goal is
 to demonstrate how Idris is capable of advanced metaprogramming that simplifies
 the implementation of protocol buffers.  
 
+This is not an official Google product.  This project is a personal 20% project.
+
 Protocol buffers are a way to describe a schema for serializable data.  The
 schema is called a protocol buffer "message".  A message describes the kind of
 data that is to be serialized, and comprises a set of fields.  Each field can be
