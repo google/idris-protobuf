@@ -154,7 +154,7 @@ idris -p lightyear Protobuf.idr Test/Utils.idr
 ```
 While in the REPL you can explore the package, e.g.
 ```
-*Test/Utils *Protobuf> serializeToTextFormat  Test.Utils.John
+*Test/Utils *Protobuf> serializeToTextFormat Test.Utils.John
 "name: \"John Doe\"\nid: 1234\nemail: \"jdoe@example.com\"\nphone: {\n  number: \"123-456-7890\"\n  type: HOME\n}\nphone: {\n  number: \"987-654-3210\"\n}\n" : String
 *Test/Utils *Protobuf> deserializeFromTextFormat {d=Test.Utils.Person} "name: \"Kester Tong\" id: 1234"
 Right (MkMessage ["Kester Tong", 1234, Nothing, []]) : Either String
