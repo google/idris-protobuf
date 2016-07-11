@@ -129,4 +129,4 @@ implementation Deserializer TextDeserializer where
 
 export deserializeFromTextFormat : String -> Either String (InterpMessage d)
 deserializeFromTextFormat {d=d} str =
-  parse (spaces *> deserializeMessage {m=TextDeserializer} {d=d}) str
+  parse (assert_total $ spaces *> deserializeMessage {m=TextDeserializer} {d=d}) str
