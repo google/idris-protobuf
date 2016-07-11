@@ -73,6 +73,7 @@ export implementation Show (InterpMessage d) where
 --- Deserialization
 
 --- Deserialization is implemented using the Lightyear monadic parser package.
+--- TODO: commit to paths to give a better error stack.
 
 TextDeserializer : Type -> Type
 TextDeserializer = Parser
@@ -110,7 +111,7 @@ implementation Deserializer TextDeserializer where
   startMessage = assert_total $ token "{"
 
   maybeReadFieldNameOrNumber = assert_total $
-    (eof *> return Nothing) <|> (token "}" *> return Nothing)
+    ((eof <|> token "}") *> return Nothing)
     <|> do {
       chars <- many (satisfy (\c => c /= ':' && not (isSpace c)))
       spaces
