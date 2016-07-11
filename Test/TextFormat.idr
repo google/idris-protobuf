@@ -31,10 +31,8 @@ implementation (Eq a) => Eq (Provider a) where
   _ ==  _ = False
 
 
--- The implementation of Eq in Protobuf.idr is a work in progress.  Until it's
--- working, for testing we implement it by serializing to text format and
--- comparing.
-
+-- Implementing Eq (InterpMessage d) is proving difficult so for testing we
+-- implement it serializing to text format and comparing.
 implementation Eq (InterpMessage d) where
   x == y = (show x) == (show y)
 
