@@ -72,10 +72,7 @@ export implementation Show (InterpMessage d) where
 
 --- Deserialization
 
---- We construct an error type
-
--- A text deserializer is a Parser, which which we provide an instance of
--- Deserializer for.
+--- Deserialization is implemented using the Lightyear monadic parser package.
 
 TextDeserializer : Type -> Type
 TextDeserializer = Parser
