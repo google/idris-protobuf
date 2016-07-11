@@ -127,6 +127,6 @@ implementation Deserializer TextDeserializer where
 
   error e = fail (show e)
 
---TODO: strip initial whitespace
 export deserializeFromTextFormat : String -> Either String (InterpMessage d)
-deserializeFromTextFormat {d=d} str = parse (deserializeMessage {m=TextDeserializer} {d=d}) str
+deserializeFromTextFormat {d=d} str =
+  parse (spaces *> deserializeMessage {m=TextDeserializer} {d=d}) str
