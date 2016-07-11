@@ -32,7 +32,7 @@ implementation (Eq a) => Eq (Provider a) where
 
 
 -- Implementing Eq (InterpMessage d) is proving difficult so for testing we
--- implement it serializing to text format and comparing.
+-- implement it by serializing to text format and comparing.
 implementation Eq (InterpMessage d) where
   x == y = (show x) == (show y)
 
