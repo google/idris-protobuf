@@ -24,6 +24,7 @@
 ||| We try to follow the naming conventions for protocol buffer descriptors
 ||| found in [descriptor.proto](https://developers.google.com/protocol-buffers/docs/reference/cpp/google.protobuf.descriptor.pb) with the exception that we use the name
 ||| `MessageDescriptor` instead of `Descriptor`.
+
 module Protobuf.Core
 
 import public Data.Fin
