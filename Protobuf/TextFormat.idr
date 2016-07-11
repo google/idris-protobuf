@@ -109,15 +109,15 @@ implementation Deserializer TextDeserializer where
   deserializeBytes = deserializeString
 
   startMessage = assert_total $ token "{"
+  isEndMessage =
+    assert_total $ ((eof <|> token "}") *> return True) <|> (return False)
 
-  maybeReadFieldNameOrNumber = assert_total $
-    ((eof <|> token "}") *> return Nothing)
-    <|> do {
+  readFieldNameOrNumber = assert_total $ do {
       chars <- many (satisfy (\c => c /= ':' && not (isSpace c)))
       spaces
       token ":"
-      return (Just (Left (pack chars)))
-    }
+      return (Left (pack chars))
+  }
 
   readEnumValueNameOrNumber = assert_total $ do {
     chars <- many (satisfy isAlpha)
