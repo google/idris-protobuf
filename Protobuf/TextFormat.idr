@@ -80,13 +80,6 @@ TextDeserializer = StateT (Int, String) Provider
 returnError : String -> TextDeserializer a
 returnError s = ST (\x => Error s)
 
--- TODO: add any other whitespace characters
-isWhitespace : Char -> Bool
-isWhitespace ' ' = True
-isWhitespace '\t' = True
-isWhitespace '\n' = True
-isWhitespace _ = False
-
 partial seek : (pos : Int) -> (cond : Char -> Bool) -> String -> Int
 seek pos cond s =
   if pos < prim_lenString s then
@@ -100,7 +93,7 @@ seek pos cond s =
 skipWhitespace : TextDeserializer ()
 skipWhitespace = assert_total (do {
   (i, s) <- get
-  put (seek i (\x => not (isWhitespace x)) s, s)
+  put (seek i (\x => not (isSpace x)) s, s)
 })
 
 peek : TextDeserializer (Maybe Char)
@@ -128,7 +121,7 @@ requireChar = assert_total (\c => do {
 consumeUpToWhitespaceAndParse : (String -> Maybe a) -> TextDeserializer a
 consumeUpToWhitespaceAndParse  = assert_total (\f => do {
   (i, s) <- get
-  i' <- return (seek i (\x => isWhitespace x || x == '}') s)
+  i' <- return (seek i (\x => isSpace x || x == '}') s)
   put (i', s)
   consumed <- return (prim__strSubstr i (i' - i) s)
   maybe (returnError "Failed to parse double") (\x => return x) (f consumed)
