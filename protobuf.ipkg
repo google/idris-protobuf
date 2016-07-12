@@ -3,11 +3,11 @@ package protobuf
 opts = "-p lightyear"
 
 modules = Protobuf.Core
+        , Protobuf.FileDescriptor
         , Protobuf.Lookup
         , Protobuf.Deserializer
         , Protobuf.Serializer
         , Protobuf.TextFormat
-        , Protobuf.FileDescriptor
         , Protobuf
         , Test.Utils
         , Test.Protobuf
