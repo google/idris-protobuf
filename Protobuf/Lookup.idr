@@ -26,6 +26,9 @@ interface Named a where
 interface Numbered a where
   getNumber : a -> Int
 
+findByName : Named a => String -> List a -> Maybe a
+findByName name = find (\x => getName x == name)
+
 lookupByNameOrNumber : (Named a, Numbered a) => Either String Int -> Vect k a -> Maybe (Fin k)
 lookupByNameOrNumber (Left name) = findIndex (\x => getName x == name)
 lookupByNameOrNumber (Right number) = findIndex (\x => getNumber x == number)
@@ -40,4 +43,7 @@ implementation Numbered FieldDescriptor where
   getNumber = number
 
 implementation Named FieldDescriptor where
+  getName = name
+
+implementation Named MessageDescriptor where
   getName = name
