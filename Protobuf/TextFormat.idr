@@ -45,7 +45,7 @@ showBool False = "false"
 showBool True  = "true"
 
 implementation Serializer TextSerializer where
-  startField name                              = do {
+  startField name number                       = do {
     (indent, buffer) <- get
     put (indent, buffer ++ (makeIndent indent) ++ name ++ ": ")
   }

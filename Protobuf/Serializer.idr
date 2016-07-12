@@ -26,7 +26,7 @@ import Protobuf.Core
 ||| composed of fields, via the `startMessage`, `endMessage`, `startField` and
 ||| `endMessage` functions.
 public export interface Monad m => Serializer (m : Type -> Type) where
-  startField : String -> m ()
+  startField : String -> Int -> m ()
   endField : m ()
 
   serializeDouble : Double -> m ()
@@ -83,20 +83,20 @@ mutual
     serializeFields xs
   }
 
-  partial serializeSingularField : Serializer m => (name : String) -> interpFieldValue d -> m ()
-  serializeSingularField name x = do {
-    startField name
+  partial serializeSingularField : Serializer m => (name : String) -> (number : Int) -> interpFieldValue d -> m ()
+  serializeSingularField name number x = do {
+    startField name number
     serializeFieldValue x
     endField
   }
 
   partial serializeField : Serializer m => interpField d -> m ()
-  serializeField {d=MkFieldDescriptor Optional _ name} =
-    maybe (return ()) (serializeSingularField name)
-  serializeField {d=MkFieldDescriptor Required _ name} =
-    serializeSingularField name
-  serializeField {d=MkFieldDescriptor Repeated ty name} =
-    forEach (serializeSingularField name)
+  serializeField {d=MkFieldDescriptor Optional _ name number} =
+    maybe (return ()) (serializeSingularField name number)
+  serializeField {d=MkFieldDescriptor Required _ name number} =
+    serializeSingularField name number
+  serializeField {d=MkFieldDescriptor Repeated ty name number} =
+    forEach (serializeSingularField name number)
 
   partial serializeFieldValue : Serializer m => interpFieldValue d -> m ()
   serializeFieldValue {d=PBDouble} x    = serializeDouble x

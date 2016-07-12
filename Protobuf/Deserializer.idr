@@ -73,7 +73,7 @@ public export interface Monad m => Deserializer (m : Type -> Type) where
 
 
 singularTypeForField : FieldDescriptor -> Type
-singularTypeForField (MkFieldDescriptor _ ty _) = interpFieldValue ty
+singularTypeForField (MkFieldDescriptor _ ty _ _) = interpFieldValue ty
 
 -- Because fields can come in any order, parsing a message is done in two
 -- phases.  First, we parse all the fields into a list of pairs
@@ -100,11 +100,11 @@ optionalFieldFromList (x::Nil) = Just x
 optionalFieldFromList (x::xs)  = optionalFieldFromList xs
 
 fieldFromFieldList : Deserializer m => List (singularTypeForField d) -> m (interpField d)
-fieldFromFieldList {d=MkFieldDescriptor Optional _ name} xs = return (optionalFieldFromList xs)
-fieldFromFieldList {d=MkFieldDescriptor Required _ name} xs = case (optionalFieldFromList xs) of
+fieldFromFieldList {d=MkFieldDescriptor Optional _ _ _} xs = return (optionalFieldFromList xs)
+fieldFromFieldList {d=MkFieldDescriptor Required _ name _} xs = case (optionalFieldFromList xs) of
     Nothing  => error (NoValueForRequiredField name)
     (Just x) => return x
-fieldFromFieldList {d=MkFieldDescriptor Repeated _ name} xs = return xs
+fieldFromFieldList {d=MkFieldDescriptor Repeated _ _ _} xs = return xs
 
 messageFromFieldList : Deserializer m => FieldList fields -> m (InterpFields fields)
 messageFromFieldList {fields=Nil} _ = return Nil
@@ -113,12 +113,6 @@ messageFromFieldList {fields=f::fs} xs = let (ys, zs) = reduceFieldList xs in do
   rest <- messageFromFieldList zs
   return (first :: rest)
 }
-
-fieldDescriptorMatchesName : String -> FieldDescriptor -> Bool
-fieldDescriptorMatchesName name (MkFieldDescriptor _ _ name') = name == name'
-
-enumValueMatchesName : String -> EnumValueDescriptor -> Bool
-enumValueMatchesName name (MkEnumValueDescriptor name' _) = name == name'
 
 mutual
   partial deserializeMessage' : Deserializer m => m (InterpMessage d)
@@ -135,22 +129,27 @@ mutual
       return Nil
     else do {
       fieldNameOrNumber <- readFieldNameOrNumber
+      -- TODO: Make this less redundant.
       case fieldNameOrNumber of
-        Left name => case (findIndex (fieldDescriptorMatchesName name) d) of
-          Nothing => error (NoFieldWithName name)
+        Left name' => case (findIndex (\f => name f == name') d) of
+          Nothing => error (NoFieldWithName name')
           Just i => do {
             v <- deserializeField {d=index i d}
             rest <- deserializeFields {d=d}
             return ((i ** v) :: rest)
           }
-        -- TODO: implement this.  Requires field descriptors to have field
-        -- numbers.
-        Right number => error (NoFieldWithNumber number)
+        Right number' => case (findIndex (\f => number f == number') d) of
+          Nothing => error (NoFieldWithNumber number')
+          Just i => do {
+            v <- deserializeField {d=index i d}
+            rest <- deserializeFields {d=d}
+            return ((i ** v) :: rest)
+          }
     }
   }
 
   partial deserializeField : Deserializer m => m (singularTypeForField d)
-  deserializeField {d=MkFieldDescriptor _ ty _} = deserializeFieldValue {d=ty}
+  deserializeField {d=MkFieldDescriptor _ ty _ _} = deserializeFieldValue {d=ty}
 
   partial deserializeFieldValue : Deserializer m => m (interpFieldValue d)
   deserializeFieldValue {d=PBDouble} = deserializeDouble
@@ -171,10 +170,12 @@ mutual
   deserializeFieldValue {d=PBEnum (MkEnumDescriptor values)} = do {
     enumValueNameOrNumber <- readEnumValueNameOrNumber
     case enumValueNameOrNumber of
-      Left name => case (findIndex (enumValueMatchesName name) values) of
-        Nothing => error (NoEnumValueWithName name)
-        Just i => return i
-      Right number => error (NoEnumValueWithNumber number)
+    Left name' => case (findIndex (\v => name v == name') values) of
+      Nothing => error (NoEnumValueWithName name')
+      Just i => return i
+    Right number' => case (findIndex (\v => number v == number') values) of
+      Nothing => error (NoEnumValueWithNumber number')
+      Just i => return i
   }
   deserializeFieldValue {d=PBMessage msg} = do {
     startMessage

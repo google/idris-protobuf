@@ -44,12 +44,10 @@ data Label : Type where
   Repeated : Label
 
 ||| A descriptor for a single value in an enum.
-data EnumValueDescriptor : Type where
-  ||| An enum value with given string and numeric value.
-  |||
-  ||| @name The string value of the enum.
-  ||| @number The integer value of the enum.  This is not the same value is the index of the enum in a PBEnum constructor.
-  MkEnumValueDescriptor : (name : String) -> (number : Int) -> EnumValueDescriptor
+record EnumValueDescriptor where
+  constructor MkEnumValueDescriptor
+  name : String
+  number : Int
 
 ||| A descriptor for an enum.
 data EnumDescriptor : Type where
@@ -71,17 +69,20 @@ mutual
     ||| @fields The fields of the message.
     MkMessageDescriptor : (fields : Vect k FieldDescriptor) -> MessageDescriptor
 
-  ||| A descriptor that describes the type of a protocol buffer field.
-  data FieldDescriptor : Type where
-    ||| Constructor for a field with given label, type and name of a field.  E.g.
-    ||| `MkFieldDescriptor Optional PBDouble "temperature"` describes an
-    ||| optional field whose name is "temperature" of type PBDouble, which is
-    ||| interpreted Idris as a `Maybe double`.
-    |||
-    ||| @label Determines whether the field is optional, required or repeated.
-    ||| @ty The type of a single value in the field.
-    ||| @name The field's name, used in the text format.
-    MkFieldDescriptor : (label : Label) -> (ty : FieldValueDescriptor) -> (name : String) -> FieldDescriptor
+  ||| A descriptor that describes the type of a protocol buffer field. E.g.
+  ||| `MkFieldDescriptor Optional PBDouble "temperature"` describes an
+  ||| optional field whose name is "temperature" of type PBDouble, which is
+  ||| interpreted Idris as a `Maybe double`.
+  |||
+  ||| label determines whether the field is optional, required or repeated.
+  ||| ty is the type of a single value in the field.
+  ||| name is the field's name, used in the text format.
+  record FieldDescriptor where
+    constructor MkFieldDescriptor
+    label : Label
+    ty : FieldValueDescriptor
+    name : String
+    number : Int
 
   ||| This does not correspond to anything in `descriptor.proto`, but is a
   ||| necessary definition here.  It describes the type of the value of a
@@ -145,9 +146,9 @@ mutual
   ||| describes.  This is a single value, a `Maybe` or a `List` depending on
   ||| the field's label.
   interpField : FieldDescriptor -> Type
-  interpField (MkFieldDescriptor Optional value _) = Maybe (interpFieldValue value)
-  interpField (MkFieldDescriptor Required value _) = interpFieldValue value
-  interpField (MkFieldDescriptor Repeated value _) = List (interpFieldValue value)
+  interpField (MkFieldDescriptor Optional value _ _) = Maybe (interpFieldValue value)
+  interpField (MkFieldDescriptor Required value _ _) = interpFieldValue value
+  interpField (MkFieldDescriptor Repeated value _ _) = List (interpFieldValue value)
 
   ||| Interprets a single field value, i.e. the value described by a required
   ||| field.  For primitive types this is a corresponding Idris primitive type.
