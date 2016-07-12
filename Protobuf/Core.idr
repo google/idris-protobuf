@@ -43,30 +43,11 @@ data Label : Type where
   ||| `Repeated` fields are represented as a `List`.
   Repeated : Label
 
--- Useful interfaces to allow us to define generic functions to look up things
--- by name and/or number.
-
-interface Named a where
-  getName : a -> String
-
-interface Numbered a where
-  getNumber : a -> Int
-
-lookupByNameOrNumber : (Named a, Numbered a) => Either String Int -> Vect k a -> Maybe (Fin k)
-lookupByNameOrNumber (Left name) = findIndex (\x => getName x == name)
-lookupByNameOrNumber (Right number) = findIndex (\x => getNumber x == number)
-
 ||| A descriptor for a single value in an enum.
 record EnumValueDescriptor where
   constructor MkEnumValueDescriptor
   name : String
   number : Int
-
-implementation Numbered EnumValueDescriptor where
-  getNumber = number
-
-implementation Named EnumValueDescriptor where
-  getName = name
 
 ||| A descriptor for an enum.
 data EnumDescriptor : Type where
@@ -101,12 +82,6 @@ mutual
     ty : FieldValueDescriptor
     name : String
     number : Int
-
-  implementation Numbered FieldDescriptor where
-    getNumber = number
-
-  implementation Named FieldDescriptor where
-    getName = name
 
   ||| This does not correspond to anything in `descriptor.proto`, but is a
   ||| necessary definition here.  It describes the type of the value of a

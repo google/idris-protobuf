@@ -15,6 +15,7 @@
 module Protobuf.Deserializer
 
 import Protobuf.Core
+import Protobuf.Lookup
 
 %default total
 
