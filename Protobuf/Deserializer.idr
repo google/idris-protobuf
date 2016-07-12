@@ -129,22 +129,15 @@ mutual
       return Nil
     else do {
       fieldNameOrNumber <- readFieldNameOrNumber
-      -- TODO: Make this less redundant.
-      case fieldNameOrNumber of
-        Left name' => case (findIndex (\f => name f == name') d) of
-          Nothing => error (NoFieldWithName name')
-          Just i => do {
-            v <- deserializeField {d=index i d}
-            rest <- deserializeFields {d=d}
-            return ((i ** v) :: rest)
-          }
-        Right number' => case (findIndex (\f => number f == number') d) of
-          Nothing => error (NoFieldWithNumber number')
-          Just i => do {
-            v <- deserializeField {d=index i d}
-            rest <- deserializeFields {d=d}
-            return ((i ** v) :: rest)
-          }
+      case lookupByNameOrNumber fieldNameOrNumber d of
+        Just i =>  do {
+          v <- deserializeField {d=index i d}
+          rest <- deserializeFields {d=d}
+          return ((i ** v) :: rest)
+        }
+        Nothing => case fieldNameOrNumber of
+          Left name => error (NoFieldWithName name)
+          Right number => error (NoFieldWithNumber number)
     }
   }
 
@@ -169,13 +162,11 @@ mutual
   deserializeFieldValue {d=PBBytes} = deserializeBytes
   deserializeFieldValue {d=PBEnum (MkEnumDescriptor values)} = do {
     enumValueNameOrNumber <- readEnumValueNameOrNumber
-    case enumValueNameOrNumber of
-    Left name' => case (findIndex (\v => name v == name') values) of
-      Nothing => error (NoEnumValueWithName name')
+    case lookupByNameOrNumber enumValueNameOrNumber values of
       Just i => return i
-    Right number' => case (findIndex (\v => number v == number') values) of
-      Nothing => error (NoEnumValueWithNumber number')
-      Just i => return i
+      Nothing => case enumValueNameOrNumber of
+        Left name => error (NoEnumValueWithName name)
+        Right number => error (NoEnumValueWithNumber number)
   }
   deserializeFieldValue {d=PBMessage msg} = do {
     startMessage
