@@ -53,19 +53,22 @@ number = fail "Not implemented"
 nothingToErr : (errMsg : String) -> Maybe a -> Parser a
 nothingToErr errMsg = maybe (fail errMsg) return
 
-fieldDescriptor : Parser FileDescriptor -> Parser FieldDescriptor
-fieldDescriptor fd = do {
-  l <- label
-  ty <- identifier
-  name <- identifier
-  token "="
-  number <- number
-  token ";"
+mutual
+  fieldDescriptor : FileDescriptor -> Parser FieldDescriptor
+  fieldDescriptor fd = do {
+    l <- label
+    ty <- fieldValueDescriptor fd
+    name <- identifier
+    token "="
+    number <- number
+    token ";"
+    return (MkFieldDescriptor l ty name number)
+  }
 
-  -- Lookup the message
-  fd' <- fd
   -- TODO: handle non-Message types.
-  msg <- nothingToErr ("Could not find message " ++ ty) (findByName ty (messages fd'))
-
-  return (MkFieldDescriptor l (PBMessage msg) name number)
-}
+  fieldValueDescriptor : FileDescriptor -> Parser FieldValueDescriptor
+  fieldValueDescriptor fd = do {
+    ty <- identifier
+    msg <- nothingToErr ("Could not find message " ++ ty) (findByName ty (messages fd))
+    return (PBMessage msg)
+  }
