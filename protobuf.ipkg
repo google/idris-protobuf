@@ -6,6 +6,7 @@ modules = Protobuf.Core
         , Protobuf.Deserializer
         , Protobuf.Serializer
         , Protobuf.TextFormat
+        , Protobuf.FileDescriptor
         , Protobuf
         , Test.Utils
         , Test.Protobuf
