@@ -116,7 +116,7 @@ messageFromFieldList {fields=f::fs} xs = let (ys, zs) = reduceFieldList xs in do
 
 mutual
   partial deserializeMessage' : Deserializer m => m (InterpMessage d)
-  deserializeMessage' {d=MkMessageDescriptor fs} = do {
+  deserializeMessage' {d=MkMessageDescriptor _ fs} = do {
     xs <- deserializeFields
     fields <- messageFromFieldList xs
     return (MkMessage fields)

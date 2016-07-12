@@ -63,11 +63,10 @@ mutual
   ||| A descriptor that describes the type of a protocol buffer message.  This
   ||| describes the type of a protocol buffer message, which is a list of
   ||| fields.
-  data MessageDescriptor : Type where
-    ||| TODO: add comment
-    |||
-    ||| @fields The fields of the message.
-    MkMessageDescriptor : (fields : Vect k FieldDescriptor) -> MessageDescriptor
+  record MessageDescriptor where
+    constructor MkMessageDescriptor
+    name : String
+    fields : Vect k FieldDescriptor
 
   ||| A descriptor that describes the type of a protocol buffer field. E.g.
   ||| `MkFieldDescriptor Optional PBDouble "temperature"` describes an
@@ -131,7 +130,7 @@ mutual
   ||| descriptor describes.  This is implemented with the algebraic data type
   ||| `InterpMessage`.
   data InterpMessage : MessageDescriptor -> Type where
-    MkMessage : InterpFields fields -> InterpMessage (MkMessageDescriptor fields)
+    MkMessage : InterpFields fields -> InterpMessage (MkMessageDescriptor name fields)
 
   ||| `InterpMessage` the algebraic data type used to implement `interpMessage`.
   ||| `InterpMessage fs` is a heterogeneous vector where where the type of each

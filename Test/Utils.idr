@@ -31,7 +31,7 @@ PhoneType = MkEnumDescriptor [
 ]
 
 public export PhoneNumber : MessageDescriptor
-PhoneNumber = MkMessageDescriptor [
+PhoneNumber = MkMessageDescriptor "PhoneNumber" [
   MkFieldDescriptor Required PBString "number" 0,
   MkFieldDescriptor Optional (PBEnum PhoneType) "type" 1
 ]
@@ -44,7 +44,7 @@ namespace PhoneNumber
   getType (MkMessage [_, type])  = type
 
 public export Person : MessageDescriptor
-Person = MkMessageDescriptor [
+Person = MkMessageDescriptor "Person" [
   MkFieldDescriptor Required PBString "name" 0,
   MkFieldDescriptor Required PBInt32 "id" 1,
   MkFieldDescriptor Optional PBString "email" 2,
