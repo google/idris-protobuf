@@ -8,6 +8,7 @@ modules = Protobuf.Core
         , Protobuf.Deserializer
         , Protobuf.Serializer
         , Protobuf.TextFormat
+        , Protobuf.Parser
         , Protobuf
         , Test.Utils
         , Test.Protobuf

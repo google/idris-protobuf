@@ -25,6 +25,8 @@ module Protobuf.FileDescriptor
 
 import Protobuf.Core
 
+%access public export
+
 record FileDescriptor where
   constructor MkFileDescriptor
   messages : List MessageDescriptor
