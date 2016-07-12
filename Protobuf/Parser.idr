@@ -25,6 +25,7 @@ module Protobuf.Parser
 import Lightyear
 import Lightyear.Char
 import Lightyear.Strings
+import Lightyear.Combinators
 
 import Protobuf.Core
 import Protobuf.FileDescriptor
@@ -53,7 +54,21 @@ number = fail "Not implemented"
 nothingToErr : (errMsg : String) -> Maybe a -> Parser a
 nothingToErr errMsg = maybe (fail errMsg) return
 
+listToVect : List a -> (k : Nat ** Vect k a)
+listToVect Nil = (Z ** Nil)
+listToVect (x::xs) = let (k ** xs') = listToVect xs in
+  (S k ** (x :: xs'))
+
 mutual
+  messageDescriptor : FileDescriptor -> Parser MessageDescriptor
+  messageDescriptor fd = do {
+    token "message"
+    name <- identifier
+    fields <- braces (many (fieldDescriptor fd))
+    (k ** fields') <- return (listToVect fields)
+    return (MkMessageDescriptor name fields')
+  }
+
   fieldDescriptor : FileDescriptor -> Parser FieldDescriptor
   fieldDescriptor fd = do {
     l <- label
