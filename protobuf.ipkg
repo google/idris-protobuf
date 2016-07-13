@@ -4,6 +4,7 @@ opts = "-p lightyear"
 
 modules = Protobuf.Core
         , Protobuf.FileDescriptor
+        , Protobuf.Eq
         , Protobuf.Lookup
         , Protobuf.Deserializer
         , Protobuf.Serializer
@@ -13,6 +14,7 @@ modules = Protobuf.Core
         , Test.Utils
         , Test.Protobuf
         , Test.TextFormat
+        , Test.Parser
 
 tests = Test.Protobuf.testGetName
       , Test.Protobuf.testGetId
@@ -22,3 +24,4 @@ tests = Test.Protobuf.testGetName
       , Test.TextFormat.testDeserializeFromTextFormatWithBadField
       , Test.TextFormat.testDeserializeFromTextFormatWithMissingRequiredField
       , Test.TextFormat.testDeserializeFromTextFormatWithOverriddenRequiredField
+      , Test.Parser.testParseFileDescriptor

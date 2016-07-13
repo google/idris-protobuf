@@ -80,7 +80,7 @@ enumValueDescriptor = do {
 manyInBraces : Parser a -> Parser (List a)
 manyInBraces p = (token "{") *> manyInBraces' [] where
   manyInBraces' : List a -> Parser (List a)
-  manyInBraces' xs = (token "}" *> return xs) <|> (commitTo (do {x <- p; manyInBraces' (x::xs)}))
+  manyInBraces' xs = (token "}" *> return xs) <|> (do {x <- p; manyInBraces' (xs ++ [x])})
 
 enumDescriptor : Parser EnumDescriptor
 enumDescriptor = (token "enum") *!> (do {
@@ -144,3 +144,24 @@ mutual
     msg <- nothingToErr ("Could not find enum " ++ ty) (findByName ty (enums fd))
     return (PBEnum msg)
   }
+
+addMessageDescriptor : FileDescriptor -> Parser FileDescriptor
+addMessageDescriptor (MkFileDescriptor ms es) = do {
+  m <- messageDescriptor (MkFileDescriptor ms es)
+  return (MkFileDescriptor (ms ++ [m]) es)
+}
+
+addEnumDescriptor : FileDescriptor -> Parser FileDescriptor
+addEnumDescriptor (MkFileDescriptor ms es) = do {
+  e <- enumDescriptor
+  return (MkFileDescriptor ms (es ++ [e]))
+}
+
+fileDescriptor : FileDescriptor -> Parser FileDescriptor
+fileDescriptor fd = (eof *> return fd) <|> (do {
+  fd' <- (addMessageDescriptor fd) <|> (addEnumDescriptor fd)
+  fileDescriptor fd'
+})
+
+export parseFileDescriptor : String -> Either String FileDescriptor
+parseFileDescriptor = parse (spaces *> fileDescriptor (MkFileDescriptor [] []))
