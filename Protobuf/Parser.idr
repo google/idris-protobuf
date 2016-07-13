@@ -64,6 +64,27 @@ listToVect Nil = (Z ** Nil)
 listToVect (x::xs) = let (k ** xs') = listToVect xs in
   (S k ** (x :: xs'))
 
+
+
+enumValueDescriptor : Parser EnumValueDescriptor
+enumValueDescriptor = do {
+  name <- identifier
+  token "="
+  number <- nonNegative
+  token ";"
+  return (MkEnumValueDescriptor name number)
+}
+
+enumDescriptor : Parser EnumDescriptor
+enumDescriptor = do {
+  token "enum"
+  name <- identifier
+  values <- braces (many (enumValueDescriptor))
+  (k ** values') <- return (listToVect values)
+  return (MkEnumDescriptor name values')
+}
+
+
 mutual
   messageDescriptor : FileDescriptor -> Parser MessageDescriptor
   messageDescriptor fd = do {
@@ -85,7 +106,6 @@ mutual
     return (MkFieldDescriptor l ty name number)
   }
 
-  -- TODO: handle Enum types.
   fieldValueDescriptor : FileDescriptor -> Parser FieldValueDescriptor
   fieldValueDescriptor fd = (token "double" *> return PBDouble)
                         <|> (token "float" *> return PBFloat)
@@ -103,6 +123,7 @@ mutual
                         <|> (token "string" *> return PBString)
                         <|> (token "bytes" *> return PBBytes)
                         <|> (messageType fd)
+                        <|> (enumType fd)
                         <?> "The name of a message, enum or primitive type"
 
   messageType : FileDescriptor -> Parser FieldValueDescriptor
@@ -110,4 +131,12 @@ mutual
     ty <- identifier
     msg <- nothingToErr ("Could not find message " ++ ty) (findByName ty (messages fd))
     return (PBMessage msg)
+  }
+
+
+  enumType : FileDescriptor -> Parser FieldValueDescriptor
+  enumType fd = do {
+  ty <- identifier
+  msg <- nothingToErr ("Could not find enum " ++ ty) (findByName ty (enums fd))
+  return (PBEnum msg)
   }

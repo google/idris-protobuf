@@ -45,5 +45,8 @@ implementation Numbered FieldDescriptor where
 implementation Named FieldDescriptor where
   getName = name
 
+implementation Named EnumDescriptor where
+  getName = name
+
 implementation Named MessageDescriptor where
   getName = name
