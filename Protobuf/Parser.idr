@@ -75,25 +75,29 @@ enumValueDescriptor = do {
   return (MkEnumValueDescriptor name number)
 }
 
+-- Consumes n copies of a thing in braces.  Assumes that the thing in question
+-- cannot start with "}" and commits to parsing the thing of "}" is not found.
+manyInBraces : Parser a -> Parser (List a)
+manyInBraces p = (token "{") *> manyInBraces' [] where
+  manyInBraces' : List a -> Parser (List a)
+  manyInBraces' xs = (token "}" *> return xs) <|> (commitTo (do {x <- p; manyInBraces' (x::xs)}))
+
 enumDescriptor : Parser EnumDescriptor
-enumDescriptor = do {
-  token "enum"
+enumDescriptor = (token "enum") *!> (do {
   name <- identifier
-  values <- braces (many (enumValueDescriptor))
+  values <- manyInBraces (enumValueDescriptor)
   (k ** values') <- return (listToVect values)
   return (MkEnumDescriptor name values')
-}
-
+})
 
 mutual
   messageDescriptor : FileDescriptor -> Parser MessageDescriptor
-  messageDescriptor fd = do {
-    token "message"
+  messageDescriptor fd = (token "message") *!> (do {
     name <- identifier
-    fields <- braces (many (fieldDescriptor fd))
+    fields <- manyInBraces (fieldDescriptor fd)
     (k ** fields') <- return (listToVect fields)
     return (MkMessageDescriptor name fields')
-  }
+  })
 
   fieldDescriptor : FileDescriptor -> Parser FieldDescriptor
   fieldDescriptor fd = do {
@@ -107,21 +111,21 @@ mutual
   }
 
   fieldValueDescriptor : FileDescriptor -> Parser FieldValueDescriptor
-  fieldValueDescriptor fd = (token "double" *> return PBDouble)
-                        <|> (token "float" *> return PBFloat)
-                        <|> (token "int32" *> return PBInt32)
-                        <|> (token "int64" *> return PBInt64)
-                        <|> (token "uint32" *> return PBUInt32)
-                        <|> (token "uint64" *> return PBUInt64)
-                        <|> (token "sint32" *> return PBSInt32)
-                        <|> (token "sint64" *> return PBSInt64)
-                        <|> (token "fixed32" *> return PBFixed32)
-                        <|> (token "fixed64" *> return PBFixed64)
-                        <|> (token "sfixed32" *> return PBSFixed32)
-                        <|> (token "sfixed64" *> return PBSFixed64)
-                        <|> (token "bool" *> return PBBool)
-                        <|> (token "string" *> return PBString)
-                        <|> (token "bytes" *> return PBBytes)
+  fieldValueDescriptor fd = (token "double" *!> return PBDouble)
+                        <|> (token "float" *!> return PBFloat)
+                        <|> (token "int32" *!> return PBInt32)
+                        <|> (token "int64" *!> return PBInt64)
+                        <|> (token "uint32" *!> return PBUInt32)
+                        <|> (token "uint64" *!> return PBUInt64)
+                        <|> (token "sint32" *!> return PBSInt32)
+                        <|> (token "sint64" *!> return PBSInt64)
+                        <|> (token "fixed32" *!> return PBFixed32)
+                        <|> (token "fixed64" *!> return PBFixed64)
+                        <|> (token "sfixed32" *!> return PBSFixed32)
+                        <|> (token "sfixed64" *!> return PBSFixed64)
+                        <|> (token "bool" *!> return PBBool)
+                        <|> (token "string" *!> return PBString)
+                        <|> (token "bytes" *!> return PBBytes)
                         <|> (messageType fd)
                         <|> (enumType fd)
                         <?> "The name of a message, enum or primitive type"
@@ -136,7 +140,7 @@ mutual
 
   enumType : FileDescriptor -> Parser FieldValueDescriptor
   enumType fd = do {
-  ty <- identifier
-  msg <- nothingToErr ("Could not find enum " ++ ty) (findByName ty (enums fd))
-  return (PBEnum msg)
+    ty <- identifier
+    msg <- nothingToErr ("Could not find enum " ++ ty) (findByName ty (enums fd))
+    return (PBEnum msg)
   }
