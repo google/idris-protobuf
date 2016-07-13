@@ -22,6 +22,8 @@
 
 module Protobuf.Parser
 
+import Data.String
+
 import Lightyear
 import Lightyear.Char
 import Lightyear.Strings
@@ -36,23 +38,26 @@ requiredSpace = space *> spaces *> return ()
 
 label : Parser Label
 label = (char 'o' >! string "ptional" *> requiredSpace *> return Optional)
-    <|> (string "re" >! string "quired" *> requiredSpace *> return Required)
-    <|> (string "re" >! string "peated" *> requiredSpace *> return Repeated)
+    <|> (string "req" >! string "uired" *> requiredSpace *> return Required)
+    <|> (string "rep" >! string "eated" *> requiredSpace *> return Repeated)
     <?> "Label"
 
 isIdentifierChar : Char -> Bool
 isIdentifierChar c = (isAlpha c) || (isDigit c) || c == '_'
 
 identifier : Parser String
-identifier = (pure pack) <*> many (satisfy isIdentifierChar) <* spaces
-
--- Number of field or enum
--- TODO: implement this
-number : Parser Int
-number = fail "Not implemented"
+identifier = (pure pack) <*> some (satisfy isIdentifierChar) <* spaces
 
 nothingToErr : (errMsg : String) -> Maybe a -> Parser a
 nothingToErr errMsg = maybe (fail errMsg) return
+
+-- Number of field or enum
+-- TODO: implement this
+nonNegative : Parser Int
+nonNegative = do {
+  digits <- some (satisfy isDigit)
+  nothingToErr "Could not parse digits" (parsePositive (pack digits))
+}
 
 listToVect : List a -> (k : Nat ** Vect k a)
 listToVect Nil = (Z ** Nil)
@@ -75,14 +80,33 @@ mutual
     ty <- fieldValueDescriptor fd
     name <- identifier
     token "="
-    number <- number
+    number <- nonNegative
     token ";"
     return (MkFieldDescriptor l ty name number)
   }
 
-  -- TODO: handle non-Message types.
+  -- TODO: handle Enum types.
   fieldValueDescriptor : FileDescriptor -> Parser FieldValueDescriptor
-  fieldValueDescriptor fd = do {
+  fieldValueDescriptor fd = (token "double" *> return PBDouble)
+                        <|> (token "float" *> return PBFloat)
+                        <|> (token "int32" *> return PBInt32)
+                        <|> (token "int64" *> return PBInt64)
+                        <|> (token "uint32" *> return PBUInt32)
+                        <|> (token "uint64" *> return PBUInt64)
+                        <|> (token "sint32" *> return PBSInt32)
+                        <|> (token "sint64" *> return PBSInt64)
+                        <|> (token "fixed32" *> return PBFixed32)
+                        <|> (token "fixed64" *> return PBFixed64)
+                        <|> (token "sfixed32" *> return PBSFixed32)
+                        <|> (token "sfixed64" *> return PBSFixed64)
+                        <|> (token "bool" *> return PBBool)
+                        <|> (token "string" *> return PBString)
+                        <|> (token "bytes" *> return PBBytes)
+                        <|> (messageType fd)
+                        <?> "The name of a message, enum or primitive type"
+
+  messageType : FileDescriptor -> Parser FieldValueDescriptor
+  messageType fd = do {
     ty <- identifier
     msg <- nothingToErr ("Could not find message " ++ ty) (findByName ty (messages fd))
     return (PBMessage msg)

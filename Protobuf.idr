@@ -19,3 +19,4 @@ import public Protobuf.FileDescriptor
 import public Protobuf.Deserializer
 import public Protobuf.Serializer
 import public Protobuf.TextFormat
+import public Protobuf.Parser
