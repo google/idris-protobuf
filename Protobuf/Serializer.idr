@@ -57,7 +57,7 @@ forEach f (x :: xs) = do {
 }
 
 serializeEnum : Serializer m => interpEnum e -> m ()
-serializeEnum {e=MkEnumDescriptor values} x = serializeEnumValue (index x values)
+serializeEnum {e=MkEnumDescriptor _ values} x = serializeEnumValue (index x values)
 
 -- Note: The totality checker doesn't consider these functions total.  I think
 -- that the problem is that every recursive call is structurally decreasing in

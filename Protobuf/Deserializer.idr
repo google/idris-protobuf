@@ -161,7 +161,7 @@ mutual
   deserializeFieldValue {d=PBBool} = deserializeBool
   deserializeFieldValue {d=PBString} = deserializeString
   deserializeFieldValue {d=PBBytes} = deserializeBytes
-  deserializeFieldValue {d=PBEnum (MkEnumDescriptor values)} = do {
+  deserializeFieldValue {d=PBEnum (MkEnumDescriptor _ values)} = do {
     enumValueNameOrNumber <- readEnumValueNameOrNumber
     case lookupByNameOrNumber enumValueNameOrNumber values of
       Just i => return i

@@ -24,7 +24,7 @@ assertEq g e = if g == e
     else putStrLn ("Test Failed, got " ++ (show g) ++ " expected: " ++ (show e))
 
 public export PhoneType : EnumDescriptor
-PhoneType = MkEnumDescriptor [
+PhoneType = MkEnumDescriptor "PhoneType" [
   MkEnumValueDescriptor "MOBILE" 0,
   MkEnumValueDescriptor "HOME" 1,
   MkEnumValueDescriptor "WORK" 5

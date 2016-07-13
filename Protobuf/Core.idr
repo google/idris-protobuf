@@ -50,14 +50,15 @@ record EnumValueDescriptor where
   number : Int
 
 ||| A descriptor for an enum.
-data EnumDescriptor : Type where
-  ||| An enum of fixed size with given values
-  |||
-  ||| @k The size of the enum
-  ||| @values The possible values of the enum.  Note that enum values have a
-  ||| numeric value that is possibly different from the index of the value in
-  ||| `values`, e.g. `values` could be `[MkEnumValueDescriptor "five" 5]`.
-  MkEnumDescriptor : (values : Vect k EnumValueDescriptor) -> EnumDescriptor
+|||
+||| k is the size of the enum
+||| values is the possible values of the enum.  Note that enum values have a
+||| numeric value that is possibly different from the index of the value in
+||| `values`, e.g. `values` could be `[MkEnumValueDescriptor "five" 5]`.
+record EnumDescriptor where
+  constructor MkEnumDescriptor
+  name : String
+  values : Vect k EnumValueDescriptor
 
 mutual
   ||| A descriptor that describes the type of a protocol buffer message.  This
@@ -108,7 +109,7 @@ mutual
     PBEnum : EnumDescriptor -> FieldValueDescriptor
 
 interpEnum : EnumDescriptor -> Type
-interpEnum (MkEnumDescriptor {k=k} _) = Fin k
+interpEnum (MkEnumDescriptor {k=k} _ _) = Fin k
 
 -- NOTE: we implement Interp* as inductive types rather than as functions,
 -- because these allow us to implement type classes such as Eq and Show.
