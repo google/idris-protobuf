@@ -10,11 +10,13 @@ modules = Protobuf.Core
         , Protobuf.Serializer
         , Protobuf.TextFormat
         , Protobuf.Parser
+        , Protobuf.Compiler
         , Protobuf
         , Test.Utils
         , Test.Protobuf
         , Test.TextFormat
         , Test.Parser
+        , Test.Compiler
 
 tests = Test.Protobuf.testGetName
       , Test.Protobuf.testGetId
@@ -25,3 +27,4 @@ tests = Test.Protobuf.testGetName
       , Test.TextFormat.testDeserializeFromTextFormatWithMissingRequiredField
       , Test.TextFormat.testDeserializeFromTextFormatWithOverriddenRequiredField
       , Test.Parser.testParseFileDescriptor
+      , Test.Compiler.testLookupMessage
