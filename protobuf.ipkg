@@ -7,7 +7,6 @@ modules = Protobuf.Core
         , Protobuf.Eq
         , Protobuf.Lookup
         , Protobuf.Deserializer
-        , Protobuf.Serializer
         , Protobuf.TextFormat
         , Protobuf.Parser
         , Protobuf
