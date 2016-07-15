@@ -158,10 +158,8 @@ addEnumDescriptor (MkFileDescriptor ms es) = do {
 }
 
 fileDescriptor : FileDescriptor -> Parser FileDescriptor
-fileDescriptor fd = (eof *> return fd) <|> (do {
-  fd' <- (addMessageDescriptor fd) <|> (addEnumDescriptor fd)
-  fileDescriptor fd'
-})
+fileDescriptor fd = (eof *> return fd) <|>
+  (((addMessageDescriptor fd) <|> (addEnumDescriptor fd)) >>= fileDescriptor)
 
 export parseFileDescriptor : String -> Either String FileDescriptor
 parseFileDescriptor = parse (spaces *> fileDescriptor (MkFileDescriptor [] []))
