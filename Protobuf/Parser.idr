@@ -90,60 +90,60 @@ enumDescriptor = (token "enum") *!> (do {
   return (MkEnumDescriptor name values')
 })
 
-mutual
-  messageDescriptor : FileDescriptor -> Parser MessageDescriptor
-  messageDescriptor fd = (token "message") *!> (do {
-    name <- identifier
-    fields <- manyInBraces (fieldDescriptor fd)
-    (k ** fields') <- return (listToVect fields)
-    return (MkMessageDescriptor name fields')
-  })
+messageType : FileDescriptor -> Parser FieldValueDescriptor
+messageType fd = do {
+  ty <- identifier
+  msg <- nothingToErr ("Could not find message " ++ ty) (findByName ty (messages fd))
+  return (PBMessage msg)
+}
 
-  fieldDescriptor : FileDescriptor -> Parser FieldDescriptor
-  fieldDescriptor fd = do {
-    l <- label
-    ty <- fieldValueDescriptor fd
-    name <- identifier
-    token "="
-    number <- nonNegative
-    token ";"
-    return (MkFieldDescriptor l ty name number)
-  }
+enumType : FileDescriptor -> Parser FieldValueDescriptor
+enumType fd = do {
+  ty <- identifier
+  msg <- nothingToErr ("Could not find enum " ++ ty) (findByName ty (enums fd))
+  return (PBEnum msg)
+}
 
-  fieldValueDescriptor : FileDescriptor -> Parser FieldValueDescriptor
-  fieldValueDescriptor fd = (token "double" *!> return PBDouble)
-                        <|> (token "float" *!> return PBFloat)
-                        <|> (token "int32" *!> return PBInt32)
-                        <|> (token "int64" *!> return PBInt64)
-                        <|> (token "uint32" *!> return PBUInt32)
-                        <|> (token "uint64" *!> return PBUInt64)
-                        <|> (token "sint32" *!> return PBSInt32)
-                        <|> (token "sint64" *!> return PBSInt64)
-                        <|> (token "fixed32" *!> return PBFixed32)
-                        <|> (token "fixed64" *!> return PBFixed64)
-                        <|> (token "sfixed32" *!> return PBSFixed32)
-                        <|> (token "sfixed64" *!> return PBSFixed64)
-                        <|> (token "bool" *!> return PBBool)
-                        <|> (token "string" *!> return PBString)
-                        <|> (token "bytes" *!> return PBBytes)
-                        <|> (messageType fd)
-                        <|> (enumType fd)
-                        <?> "The name of a message, enum or primitive type"
+fieldValueDescriptor : FileDescriptor -> Parser FieldValueDescriptor
+fieldValueDescriptor fd = (token "double" *!> return PBDouble)
+                      <|> (token "float" *!> return PBFloat)
+                      <|> (token "int32" *!> return PBInt32)
+                      <|> (token "int64" *!> return PBInt64)
+                      <|> (token "uint32" *!> return PBUInt32)
+                      <|> (token "uint64" *!> return PBUInt64)
+                      <|> (token "sint32" *!> return PBSInt32)
+                      <|> (token "sint64" *!> return PBSInt64)
+                      <|> (token "fixed32" *!> return PBFixed32)
+                      <|> (token "fixed64" *!> return PBFixed64)
+                      <|> (token "sfixed32" *!> return PBSFixed32)
+                      <|> (token "sfixed64" *!> return PBSFixed64)
+                      <|> (token "bool" *!> return PBBool)
+                      <|> (token "string" *!> return PBString)
+                      <|> (token "bytes" *!> return PBBytes)
+                      <|> (messageType fd)
+                      <|> (enumType fd)
+                      <?> "The name of a message, enum or primitive type"
 
-  messageType : FileDescriptor -> Parser FieldValueDescriptor
-  messageType fd = do {
-    ty <- identifier
-    msg <- nothingToErr ("Could not find message " ++ ty) (findByName ty (messages fd))
-    return (PBMessage msg)
-  }
+fieldDescriptor : FileDescriptor -> Parser FieldDescriptor
+fieldDescriptor fd = do {
+  l <- label
+  ty <- fieldValueDescriptor fd
+  name <- identifier
+  token "="
+  number <- nonNegative
+  token ";"
+  return (MkFieldDescriptor l ty name number)
+}
+
+messageDescriptor : FileDescriptor -> Parser MessageDescriptor
+messageDescriptor fd = (token "message") *!> (do {
+  name <- identifier
+  fields <- manyInBraces (fieldDescriptor fd)
+  (k ** fields') <- return (listToVect fields)
+  return (MkMessageDescriptor name fields')
+})
 
 
-  enumType : FileDescriptor -> Parser FieldValueDescriptor
-  enumType fd = do {
-    ty <- identifier
-    msg <- nothingToErr ("Could not find enum " ++ ty) (findByName ty (enums fd))
-    return (PBEnum msg)
-  }
 
 addMessageDescriptor : FileDescriptor -> Parser FileDescriptor
 addMessageDescriptor (MkFileDescriptor ms es) = do {
