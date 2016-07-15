@@ -54,15 +54,15 @@ known at compile time.
 
 In Idris we can write generic, type safe, code for working with protocol
 buffers.  In particular we have code for serialization and deserialization to
-text form.  Serialization looks like
+and from text form.  Serialization looks like
 ```
-serializeToTextFormat : InterpMessage d -> String
+printToTextFormat : InterpMessage d -> String
 ```
 Note that `d` is an implicit argument.  If we were to expand the above
 declaration to include the type of `d` (which Idris is able to infer), it would
 be
 ```
-serializeToTextFormat : {d : MessageDescriptor} -> InterpMessage d -> String
+printToTextFormat : {d : MessageDescriptor} -> InterpMessage d -> String
 ```
 Note that this function is generic in that `d` ranges over the space of
 message descriptors, and for each `d`, the type of the second argument is
