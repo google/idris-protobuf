@@ -17,6 +17,6 @@ module Protobuf
 import public Protobuf.Core
 import public Protobuf.FileDescriptor
 import public Protobuf.Eq
-import public Protobuf.Deserializer
+import public Protobuf.ParseUtils
 import public Protobuf.TextFormat
 import public Protobuf.Parser

@@ -36,8 +36,8 @@ johnInTextFormat = unlines [
   ""
 ]
 
-testSerializeToTextFormat : IO ()
-testSerializeToTextFormat = assertEq (serializeToTextFormat John) johnInTextFormat
+testPrintToTextFormat : IO ()
+testPrintToTextFormat = assertEq (printToTextFormat John) johnInTextFormat
 
 implementation (Eq a) => Eq (Provider a) where
   (Provide x)  == (Provide y) = x == y
@@ -50,18 +50,18 @@ implementation (Eq a) => Eq (Provider a) where
 implementation Eq (InterpMessage d) where
   x == y = (show x) == (show y)
 
-testDeserializeFromTextFormat : IO ()
-testDeserializeFromTextFormat = assertEq
-  (deserializeFromTextFormat johnInTextFormat) (Right John)
+testParseFromTextFormat : IO ()
+testParseFromTextFormat = assertEq
+  (parseFromTextFormat johnInTextFormat) (Right John)
 
-testDeserializeFromTextFormatWithBadField : IO ()
-testDeserializeFromTextFormatWithBadField = assertEq
-  (deserializeFromTextFormat {d=Person} "not_a_field: 1")
+testParseFromTextFormatWithBadField : IO ()
+testParseFromTextFormatWithBadField = assertEq
+  (parseFromTextFormat {d=Person} "not_a_field: 1")
   (Left "at 1:14 expected:\n  An field in the message Person (no field named \"not_a_field\")")
 
-testDeserializeFromTextFormatWithMissingRequiredField : IO ()
-testDeserializeFromTextFormatWithMissingRequiredField = assertEq
-  (deserializeFromTextFormat {d=Person} "id: 1234")
+testParseFromTextFormatWithMissingRequiredField : IO ()
+testParseFromTextFormatWithMissingRequiredField = assertEq
+  (parseFromTextFormat {d=Person} "id: 1234")
   (Left "at 0:0 expected:\n  A valid message (The required field \"name\" was not set.)")
 
 Jane : InterpMessage Person
@@ -75,7 +75,7 @@ Jane = MkMessage [
   ]
 ]
 
-testDeserializeFromTextFormatWithOverriddenRequiredField : IO ()
-testDeserializeFromTextFormatWithOverriddenRequiredField = assertEq
-  (deserializeFromTextFormat (johnInTextFormat ++ "name: \"Jane Doe\""))
+testParseFromTextFormatWithOverriddenRequiredField : IO ()
+testParseFromTextFormatWithOverriddenRequiredField = assertEq
+  (parseFromTextFormat (johnInTextFormat ++ "name: \"Jane Doe\""))
   (Right Jane)

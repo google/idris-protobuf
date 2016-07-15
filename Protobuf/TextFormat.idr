@@ -22,7 +22,7 @@ import Lightyear.Char
 import Lightyear.Strings
 
 import Protobuf.Core
-import Protobuf.Deserializer
+import Protobuf.ParseUtils
 
 ||| A state monad that stores the string so far, and the current indent.
 Printer : Type -> Type
@@ -126,11 +126,11 @@ mutual
   printFieldValue {d=PBMessage _} = inBraces . printMessage
   printFieldValue {d=PBEnum _} = printEnum
 
-export serializeToTextFormat : InterpMessage d -> String
-serializeToTextFormat x = assert_total $ snd (execState (printMessage x) (Z, ""))
+export printToTextFormat : InterpMessage d -> String
+printToTextFormat x = assert_total $ snd (execState (printMessage x) (Z, ""))
 
 export implementation Show (InterpMessage d) where
-  show = serializeToTextFormat
+  show = printToTextFormat
 
 --- Deserialization
 
@@ -212,5 +212,5 @@ mutual
   parseFieldValue {d=PBMessage m} = braces parseMessage
   parseFieldValue {d=PBEnum e} = parseEnum
 
-export deserializeFromTextFormat : String -> Either String (InterpMessage d)
-deserializeFromTextFormat {d=d} = assert_total $ parse (spaces *> parseMessage {d=d})
+export parseFromTextFormat : String -> Either String (InterpMessage d)
+parseFromTextFormat {d=d} = assert_total $ parse (spaces *> parseMessage {d=d})

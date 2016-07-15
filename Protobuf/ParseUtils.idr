@@ -12,7 +12,7 @@
 ||| See the License for the specific language governing permissions and
 ||| limitations under the License.
 
-module Protobuf.Deserializer
+module Protobuf.ParseUtils
 
 import Protobuf.Core
 
