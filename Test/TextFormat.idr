@@ -57,12 +57,12 @@ testDeserializeFromTextFormat = assertEq
 testDeserializeFromTextFormatWithBadField : IO ()
 testDeserializeFromTextFormatWithBadField = assertEq
   (deserializeFromTextFormat {d=Person} "not_a_field: 1")
-  (Left "at 1:14 expected:\n  There was no field with name \"not_a_field\"")
+  (Left "at 1:14 expected:\n  An field in the message Person (no field named \"not_a_field\")")
 
 testDeserializeFromTextFormatWithMissingRequiredField : IO ()
 testDeserializeFromTextFormatWithMissingRequiredField = assertEq
   (deserializeFromTextFormat {d=Person} "id: 1234")
-  (Left "at 0:0 expected:\n  The required field \"name\" was not set")
+  (Left "at 0:0 expected:\n  A valid message (The required field \"name\" was not set.)")
 
 Jane : InterpMessage Person
 Jane = MkMessage [

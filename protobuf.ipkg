@@ -5,7 +5,6 @@ opts = "-p lightyear"
 modules = Protobuf.Core
         , Protobuf.FileDescriptor
         , Protobuf.Eq
-        , Protobuf.Lookup
         , Protobuf.Deserializer
         , Protobuf.TextFormat
         , Protobuf.Parser

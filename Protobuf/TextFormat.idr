@@ -56,7 +56,7 @@ printIndent = getIndent >>= (print . makeIndent) where
 ||| Prints the expression in braces
 inBraces : Printer () -> Printer ()
 inBraces p = do {
-  print "{"
+  print "{\n"
   indent <- getIndent
   putIndent (indent + 1)
   p
@@ -135,60 +135,82 @@ export implementation Show (InterpMessage d) where
 --- Deserialization
 
 --- Deserialization is implemented using the Lightyear monadic parser package.
---- TODO: commit to paths to give a better error stack.
+--- TODO: commit to more paths to give a better error stack and faster parsing.
 
-TextDeserializer : Type -> Type
-TextDeserializer = Parser
+-- TODO: handle escape codes including \"
+parseString : Parser String
+parseString = do {
+  char '"'
+  chars <- many (satisfy (\c => c /= '"'))
+  char '"'
+  spaces
+  return (pack chars)
+}
 
-implementation Deserializer TextDeserializer where
-  deserializeDouble = fail "Not Implemented"
-  deserializeFloat = fail "Not Implemented"
-  deserializeInt32 = assert_total $ do {
+parseEnum : Parser (interpEnum d)
+parseEnum {d=MkEnumDescriptor enumName values} = do {
+  chars <- many (satisfy isAlpha)
+  spaces
+  case findIndex (\v => name v == pack chars) values of
+    Nothing => fail (
+      "An field in the enum " ++ enumName ++ " (no field named " ++
+      (show (pack chars)) ++ ")")
+    Just i => return i
+}
+
+mutual
+  parseMessage : Parser (InterpMessage d)
+  parseMessage {d=MkMessageDescriptor msgName fields} = do {
+    xs <- parseFields msgName
+    case messageFromFieldList {fields=fields} xs of
+      Left err => fail ("A valid message (" ++ err ++ ")")
+      Right fs => return (MkMessage fs)
+  }
+
+  parseFields : (msgName : String) -> Parser (FieldList d)
+  parseFields {d=d} msgName = many (do {
+    chars <- some (satisfy (\c => isDigit c || isAlpha c || c == '_'))
+    commitTo (do {
+      spaces
+      token ":"
+      case Data.Vect.findIndex (\v => name v == pack chars) d of
+        Nothing => fail (
+          "An field in the message " ++ msgName ++ " (no field named " ++
+          (show (pack chars)) ++ ")")
+        Just i => do {
+          v <- parseField
+          return (i ** v)
+        }
+    })
+  })
+
+  parseField : Parser (singularTypeForField d)
+  parseField {d=MkFieldDescriptor _ ty _ _} = parseFieldValue {d=ty}
+
+  parseFieldValue : Parser (interpFieldValue d)
+  parseFieldValue {d=PBDouble} = fail "Not Implemented"
+  parseFieldValue {d=PBFloat} = fail "Not Implemented"
+  parseFieldValue {d=PBInt32} = do {
     chars <- many (satisfy isDigit)
     spaces
     case parseInteger (pack chars) of
       Nothing => fail "Could not parse Int32"
       Just x => return x
   }
-  deserializeInt64 = fail "Not Implemented"
-  deserializeUInt32 = fail "Not Implemented"
-  deserializeUInt64 = fail "Not Implemented"
-  deserializeSInt32 = fail "Not Implemented"
-  deserializeSInt64 = fail "Not Implemented"
-  deserializeFixed32 = fail "Not Implemented"
-  deserializeFixed64 = fail "Not Implemented"
-  deserializeSFixed32 = fail "Not Implemented"
-  deserializeSFixed64 = fail "Not Implemented"
-  deserializeBool = fail "Not Implemented"
-  -- TODO: handle escape codes including \"
-  deserializeString = assert_total $ do {
-    char '"'
-    chars <- many (satisfy (\c => c /= '"'))
-    char '"'
-    spaces
-    return (pack chars)
-  }
-  deserializeBytes = deserializeString
-
-  startMessage = assert_total $ token "{"
-  isEndMessage =
-    assert_total $ ((eof <|> token "}") *> return True) <|> (return False)
-
-  readFieldNameOrNumber = assert_total $ do {
-    chars <- many (satisfy (\c => c /= ':' && not (isSpace c)))
-    spaces
-    token ":"
-    return (Left (pack chars))
-  }
-
-  readEnumValueNameOrNumber = assert_total $ do {
-    chars <- many (satisfy isAlpha)
-    spaces
-    return (Left (pack chars))
-  }
-
-  error e = fail (show e)
+  parseFieldValue {d=PBInt64} = fail "Not Implemented"
+  parseFieldValue {d=PBUInt32} = fail "Not Implemented"
+  parseFieldValue {d=PBUInt64} = fail "Not Implemented"
+  parseFieldValue {d=PBSInt32} = fail "Not Implemented"
+  parseFieldValue {d=PBSInt64} = fail "Not Implemented"
+  parseFieldValue {d=PBFixed32} = fail "Not Implemented"
+  parseFieldValue {d=PBFixed64} = fail "Not Implemented"
+  parseFieldValue {d=PBSFixed32} = fail "Not Implemented"
+  parseFieldValue {d=PBSFixed64} = fail "Not Implemented"
+  parseFieldValue {d=PBBool} = fail "Not Implemented"
+  parseFieldValue {d=PBString} = parseString
+  parseFieldValue {d=PBBytes} = parseString
+  parseFieldValue {d=PBMessage m} = braces parseMessage
+  parseFieldValue {d=PBEnum e} = parseEnum
 
 export deserializeFromTextFormat : String -> Either String (InterpMessage d)
-deserializeFromTextFormat {d=d} str =
-  parse (assert_total $ spaces *> deserializeMessage {m=TextDeserializer} {d=d}) str
+deserializeFromTextFormat {d=d} = assert_total $ parse (spaces *> parseMessage {d=d})
