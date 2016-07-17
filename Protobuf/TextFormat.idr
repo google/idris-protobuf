@@ -147,6 +147,29 @@ parseString = do {
   return (pack chars)
 }
 
+parseInteger : Parser Integer
+parseInteger = do {
+  chars <- many (satisfy (\c => c /= '}' && not (isSpace c)))
+  spaces
+  case parseInteger (pack chars) of
+    Nothing => fail $ "Could not parse " ++ (pack chars) ++ " as an integer"
+    Just x => return x
+}
+
+parseDouble : Parser Double
+parseDouble = do {
+  chars <- many (satisfy (\c => c /= '}' && not (isSpace c)))
+  spaces
+  case parseDouble (pack chars) of
+    Nothing => fail $ "Could not parse " ++ (pack chars) ++ " as a double"
+    Just x => return x
+}
+
+parseBool : Parser Bool
+parseBool = ((char 't' *!> token "rue" *> return True)
+        <|> (char 'f' *!> token "alse" *> return False))
+        <?> "A boolean value (\"true\" or \"false\")"
+
 parseEnum : Parser (interpEnum d)
 parseEnum {d=MkEnumDescriptor enumName values} = do {
   chars <- many (satisfy isAlpha)
@@ -188,25 +211,19 @@ mutual
   parseField {d=MkFieldDescriptor _ ty _ _} = parseFieldValue {d=ty}
 
   parseFieldValue : Parser (interpFieldValue d)
-  parseFieldValue {d=PBDouble} = fail "Not Implemented"
-  parseFieldValue {d=PBFloat} = fail "Not Implemented"
-  parseFieldValue {d=PBInt32} = do {
-    chars <- many (satisfy isDigit)
-    spaces
-    case parseInteger (pack chars) of
-      Nothing => fail "Could not parse Int32"
-      Just x => return x
-  }
-  parseFieldValue {d=PBInt64} = fail "Not Implemented"
-  parseFieldValue {d=PBUInt32} = fail "Not Implemented"
-  parseFieldValue {d=PBUInt64} = fail "Not Implemented"
-  parseFieldValue {d=PBSInt32} = fail "Not Implemented"
-  parseFieldValue {d=PBSInt64} = fail "Not Implemented"
-  parseFieldValue {d=PBFixed32} = fail "Not Implemented"
-  parseFieldValue {d=PBFixed64} = fail "Not Implemented"
-  parseFieldValue {d=PBSFixed32} = fail "Not Implemented"
-  parseFieldValue {d=PBSFixed64} = fail "Not Implemented"
-  parseFieldValue {d=PBBool} = fail "Not Implemented"
+  parseFieldValue {d=PBDouble} = parseDouble
+  parseFieldValue {d=PBFloat} = parseDouble
+  parseFieldValue {d=PBInt32} = parseInteger
+  parseFieldValue {d=PBInt64} = parseInteger
+  parseFieldValue {d=PBUInt32} = parseInteger
+  parseFieldValue {d=PBUInt64} = parseInteger
+  parseFieldValue {d=PBSInt32} = parseInteger
+  parseFieldValue {d=PBSInt64} = parseInteger
+  parseFieldValue {d=PBFixed32} = parseInteger
+  parseFieldValue {d=PBFixed64} = parseInteger
+  parseFieldValue {d=PBSFixed32} = parseInteger
+  parseFieldValue {d=PBSFixed64} = parseInteger
+  parseFieldValue {d=PBBool} = parseBool
   parseFieldValue {d=PBString} = parseString
   parseFieldValue {d=PBBytes} = parseString
   parseFieldValue {d=PBMessage m} = braces parseMessage

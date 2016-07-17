@@ -71,5 +71,17 @@ allTests = runTests (MkTestFixture "TextFormat" [
   MkTestCase "ParseMessageWithOverriddenRequiredField" (do {
     parsed <- assertNotError $ parseFromTextFormat (johnInTextFormat ++ "name: \"Jane Doe\"\n")
     assertEq parsed Jane
+  }),
+  MkTestCase "ParseDouble" (do {
+    parsed <- assertNotError $ parseFromTextFormat {d=MkMessageDescriptor "test" [
+      MkFieldDescriptor Required PBDouble "double_value" 0
+    ]} "double_value: -12.34"
+    assertEq parsed (MkMessage [-12.34])
+  }),
+  MkTestCase "ParseBool" (do {
+    parsed <- assertNotError $ parseFromTextFormat {d=MkMessageDescriptor "test" [
+      MkFieldDescriptor Required PBBool "bool_value" 0
+    ]} "bool_value: true"
+    assertEq parsed (MkMessage [True])
   })
 ])
