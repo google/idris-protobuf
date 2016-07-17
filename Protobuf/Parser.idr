@@ -64,8 +64,6 @@ listToVect Nil = (Z ** Nil)
 listToVect (x::xs) = let (k ** xs') = listToVect xs in
   (S k ** (x :: xs'))
 
-
-
 enumValueDescriptor : Parser EnumValueDescriptor
 enumValueDescriptor = do {
   name <- identifier
@@ -135,8 +133,6 @@ messageDescriptor fd = (token "message") *!> (do {
   (k ** fields') <- return (listToVect fields)
   return (MkMessageDescriptor name fields')
 })
-
-
 
 addMessageDescriptor : FileDescriptor -> Parser FileDescriptor
 addMessageDescriptor (MkFileDescriptor ms es) = do {
