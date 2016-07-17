@@ -75,17 +75,10 @@ enumValueDescriptor = do {
   return (MkEnumValueDescriptor name number)
 }
 
--- Consumes n copies of a thing in braces.  Assumes that the thing in question
--- cannot start with "}" and commits to parsing the thing of "}" is not found.
-manyInBraces : Parser a -> Parser (List a)
-manyInBraces p = (token "{") *> manyInBraces' [] where
-  manyInBraces' : List a -> Parser (List a)
-  manyInBraces' xs = (token "}" *> return xs) <|> (do {x <- p; manyInBraces' (xs ++ [x])})
-
 enumDescriptor : Parser EnumDescriptor
 enumDescriptor = (token "enum") *!> (do {
   name <- identifier
-  values <- manyInBraces (enumValueDescriptor)
+  values <- braces (many (enumValueDescriptor))
   (k ** values') <- return (listToVect values)
   return (MkEnumDescriptor name values')
 })
@@ -138,7 +131,7 @@ fieldDescriptor fd = do {
 messageDescriptor : FileDescriptor -> Parser MessageDescriptor
 messageDescriptor fd = (token "message") *!> (do {
   name <- identifier
-  fields <- manyInBraces (fieldDescriptor fd)
+  fields <- braces (many (fieldDescriptor fd))
   (k ** fields') <- return (listToVect fields)
   return (MkMessageDescriptor name fields')
 })
