@@ -10,16 +10,11 @@ modules = Protobuf.Core
         , Protobuf.Parser
         , Protobuf
         , Test.Utils
+        , Test.UnitTest
         , Test.Protobuf
         , Test.TextFormat
         , Test.Parser
 
-tests = Test.Protobuf.testGetName
-      , Test.Protobuf.testGetId
-      , Test.Protobuf.testGetEmail
-      , Test.TextFormat.testPrintToTextFormat
-      , Test.TextFormat.testParseFromTextFormat
-      , Test.TextFormat.testParseFromTextFormatWithBadField
-      , Test.TextFormat.testParseFromTextFormatWithMissingRequiredField
-      , Test.TextFormat.testParseFromTextFormatWithOverriddenRequiredField
-      , Test.Parser.testParseFileDescriptor
+tests = Test.Protobuf.allTests
+      , Test.TextFormat.allTests
+      , Test.Parser.allTests

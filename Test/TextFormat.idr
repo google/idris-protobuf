@@ -14,6 +14,7 @@
 
 module Test.TextFormat
 
+import Test.UnitTest
 import Test.Utils
 import Protobuf.Core
 import Protobuf.TextFormat
@@ -36,33 +37,10 @@ johnInTextFormat = unlines [
   ""
 ]
 
-testPrintToTextFormat : IO ()
-testPrintToTextFormat = assertEq (printToTextFormat John) johnInTextFormat
-
-implementation (Eq a) => Eq (Provider a) where
-  (Provide x)  == (Provide y) = x == y
-  (Error x) == (Error y) = x == y
-  _ ==  _ = False
-
-
 -- Implementing Eq (InterpMessage d) is proving difficult so for testing we
 -- implement it by serializing to text format and comparing.
 implementation Eq (InterpMessage d) where
   x == y = (show x) == (show y)
-
-testParseFromTextFormat : IO ()
-testParseFromTextFormat = assertEq
-  (parseFromTextFormat johnInTextFormat) (Right John)
-
-testParseFromTextFormatWithBadField : IO ()
-testParseFromTextFormatWithBadField = assertEq
-  (parseFromTextFormat {d=Person} "not_a_field: 1")
-  (Left "at 1:14 expected:\n  An field in the message Person (no field named \"not_a_field\")")
-
-testParseFromTextFormatWithMissingRequiredField : IO ()
-testParseFromTextFormatWithMissingRequiredField = assertEq
-  (parseFromTextFormat {d=Person} "id: 1234")
-  (Left "at 0:0 expected:\n  A valid message (The required field \"name\" was not set.)")
 
 Jane : InterpMessage Person
 Jane = MkMessage [
@@ -75,7 +53,23 @@ Jane = MkMessage [
   ]
 ]
 
-testParseFromTextFormatWithOverriddenRequiredField : IO ()
-testParseFromTextFormatWithOverriddenRequiredField = assertEq
-  (parseFromTextFormat (johnInTextFormat ++ "name: \"Jane Doe\""))
-  (Right Jane)
+allTests : IO ()
+allTests = runTests (MkTestFixture "TextFormat" [
+  MkTestCase "PrintJohn" (assertEq (printToTextFormat John) johnInTextFormat),
+  MkTestCase "ParseJohn" (do {
+    parsed <- assertNotError (parseFromTextFormat {d=Person} johnInTextFormat)
+    assertEq parsed John
+  }),
+  MkTestCase "ParseMessageWithBadField"
+    (assertError
+      (parseFromTextFormat {d=Person} "not_a_field: 1")
+      "at 1:14 expected:\n  An field in the message Person (no field named \"not_a_field\")"),
+  MkTestCase "ParseMessageWithMissingRequiredField"
+    (assertError
+        (parseFromTextFormat {d=Person} "id: 1234")
+        "at 0:0 expected:\n  A valid message (The required field \"name\" was not set.)"),
+  MkTestCase "ParseMessageWithOverriddenRequiredField" (do {
+    parsed <- assertNotError $ parseFromTextFormat (johnInTextFormat ++ "name: \"Jane Doe\"\n")
+    assertEq parsed Jane
+  })
+])

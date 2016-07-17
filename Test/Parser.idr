@@ -14,6 +14,7 @@
 
 module Test.Parser
 
+import Test.UnitTest
 import Test.Utils
 import Protobuf.Core
 import Protobuf.FileDescriptor
@@ -43,7 +44,10 @@ expectedFileDescriptor = MkFileDescriptor
   [PhoneNumber, Person]
   [PhoneType]
 
-testParseFileDescriptor : IO ()
-testParseFileDescriptor = assertEq'
-  (parseFileDescriptor protoFileContents)
-  (Right expectedFileDescriptor)
+allTests : IO ()
+allTests = runTests (MkTestFixture "Parser" [
+  MkTestCase "ParseFileDescriptor" (do {
+    parsed <- assertNotError $ parseFileDescriptor protoFileContents
+    assertEq' parsed expectedFileDescriptor
+  })
+])

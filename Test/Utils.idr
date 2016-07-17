@@ -18,16 +18,6 @@ import Protobuf.Core
 
 %access export
 
-assertEq : (Eq a, Show a) => (given : a) -> (expected : a) -> IO ()
-assertEq g e = if g == e
-    then putStrLn "Test Passed"
-    else putStrLn ("Test Failed, got " ++ (show g) ++ " expected: " ++ (show e))
-
-assertEq' : Eq a => (given : a) -> (expected : a) -> IO ()
-assertEq' g e = if g == e
-    then putStrLn "Test Passed"
-    else putStrLn "Test Failed"
-
 public export PhoneType : EnumDescriptor
 PhoneType = MkEnumDescriptor "PhoneType" [
   MkEnumValueDescriptor "MOBILE" 0,

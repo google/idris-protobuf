@@ -14,16 +14,15 @@
 
 module Test.Protobuf
 
+import Test.UnitTest
 import Test.Utils
 import Protobuf.Core
 
 %access export
 
-testGetName : IO ()
-testGetName = assertEq (getName John) "John Doe"
-
-testGetId : IO ()
-testGetId = assertEq (getId John) 1234
-
-testGetEmail : IO ()
-testGetEmail = assertEq (getEmail John) (Just "jdoe@example.com")
+allTests : IO ()
+allTests = runTests (MkTestFixture "Protobuf" [
+  MkTestCase "GetName" (assertEq (getName John) "John Doe"),
+  MkTestCase "GetId" (assertEq (getId John) 1234),
+  MkTestCase "GetEmail" (assertEq (getEmail John) (Just "jdoe@example.com"))
+])
