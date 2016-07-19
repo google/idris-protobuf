@@ -81,12 +81,13 @@ enumValueDescriptor = do {
   return (MkEnumValueDescriptor name number)
 }
 
-enumDescriptor : ProtoParser EnumDescriptor
+enumDescriptor : ProtoParser ()
 enumDescriptor = (token "enum") *!> (do {
   name <- identifier
   values <- braces (many (enumValueDescriptor))
   (k ** values') <- return (listToVect values)
-  return (MkEnumDescriptor name values')
+  (MkParserState scope messages enums) <- get
+  put (MkParserState scope messages (enums ++ [MkEnumDescriptor name values']))
 })
 
 messageType : ProtoParser FieldValueDescriptor
@@ -138,30 +139,17 @@ fieldDescriptor = do {
   return (MkFieldDescriptor l ty name number)
 }
 
-messageDescriptor : ProtoParser MessageDescriptor
+messageDescriptor : ProtoParser ()
 messageDescriptor = (token "message") *!> (do {
   name <- identifier
   fields <- braces (many fieldDescriptor)
   (k ** fields') <- return (listToVect fields)
-  return (MkMessageDescriptor name fields')
+  (MkParserState scope messages enums) <- get
+  put (MkParserState scope (messages ++ [MkMessageDescriptor name fields']) enums)
 })
 
-addMessageDescriptor : ProtoParser ()
-addMessageDescriptor = do {
-  m <- messageDescriptor
-  (MkParserState scope messages enums) <- get
-  put (MkParserState scope (messages ++ [m]) enums)
-}
-
-addEnumDescriptor : ProtoParser ()
-addEnumDescriptor = do {
-  e <- enumDescriptor
-  (MkParserState scope messages enums) <- get
-  put (MkParserState scope messages (enums ++ [e]))
-}
-
 fileDescriptor : ProtoParser ()
-fileDescriptor = (many (addMessageDescriptor <|> addEnumDescriptor)) *> eof
+fileDescriptor = (many (messageDescriptor <|> enumDescriptor)) *> eof
 
 runParser : String -> Either String ParserState
 runParser input = case output of
