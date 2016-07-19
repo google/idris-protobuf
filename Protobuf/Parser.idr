@@ -41,6 +41,18 @@ record ParserState where
 ProtoParser : Type -> Type
 ProtoParser = ParserT String (State ParserState)
 
+addMessage : MessageDescriptor -> ProtoParser ()
+addMessage msg = do {
+  (MkParserState scope messages enums) <- get
+  put (MkParserState scope (messages ++ [msg]) enums)
+}
+
+addEnum : EnumDescriptor -> ProtoParser ()
+addEnum enum = do {
+  (MkParserState scope messages enums) <- get
+  put (MkParserState scope messages (enums ++ [enum]))
+}
+
 requiredSpace : ProtoParser ()
 requiredSpace = space *> spaces *> return ()
 
@@ -86,8 +98,7 @@ enumDescriptor = (token "enum") *!> (do {
   name <- identifier
   values <- braces (many (enumValueDescriptor))
   (k ** values') <- return (listToVect values)
-  (MkParserState scope messages enums) <- get
-  put (MkParserState scope messages (enums ++ [MkEnumDescriptor name values']))
+  addEnum (MkEnumDescriptor name values')
 })
 
 messageType : ProtoParser FieldValueDescriptor
@@ -144,8 +155,7 @@ messageDescriptor = (token "message") *!> (do {
   name <- identifier
   fields <- braces (many fieldDescriptor)
   (k ** fields') <- return (listToVect fields)
-  (MkParserState scope messages enums) <- get
-  put (MkParserState scope (messages ++ [MkMessageDescriptor name fields']) enums)
+  addMessage (MkMessageDescriptor name fields')
 })
 
 fileDescriptor : ProtoParser ()
