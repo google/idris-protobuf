@@ -19,14 +19,14 @@ import Protobuf.Core
 %access export
 
 public export PhoneType : EnumDescriptor
-PhoneType = MkEnumDescriptor "PhoneType" [
+PhoneType = MkEnumDescriptor "Person.PhoneNumber.PhoneType" [
   MkEnumValueDescriptor "MOBILE" 0,
   MkEnumValueDescriptor "HOME" 1,
   MkEnumValueDescriptor "WORK" 2
 ]
 
 public export PhoneNumber : MessageDescriptor
-PhoneNumber = MkMessageDescriptor "PhoneNumber" [
+PhoneNumber = MkMessageDescriptor "Person.PhoneNumber" [
   MkFieldDescriptor Required PBString "number" 0,
   MkFieldDescriptor Optional (PBEnum PhoneType) "type" 1
 ]

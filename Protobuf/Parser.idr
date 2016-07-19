@@ -34,7 +34,7 @@ import Protobuf.Core
 
 record ParserState where
   constructor MkParserState
-  scope : List String
+  scope : String
   messages : List MessageDescriptor
   enums : List EnumDescriptor
 
@@ -53,6 +53,27 @@ addEnum enum = do {
   put (MkParserState scope messages (enums ++ [enum]))
 }
 
+||| Pushes a name to the scope and returns the original scope.
+pushScope : String -> ProtoParser String
+pushScope name = do {
+  (MkParserState scope messages enums) <- get
+  put (MkParserState (scope ++ name ++ ".") messages enums)
+  return scope
+}
+
+getScope : ProtoParser String
+getScope = do {
+  (MkParserState scope messages enums) <- get
+  return scope
+}
+
+setScope : String -> ProtoParser ()
+setScope scope = do {
+  (MkParserState _ messages enums) <- get
+  put (MkParserState scope messages enums)
+}
+
+
 requiredSpace : ProtoParser ()
 requiredSpace = space *> spaces *> return ()
 
@@ -63,7 +84,7 @@ label = (char 'o' >! string "ptional" *> requiredSpace *> return Optional)
     <?> "Label"
 
 isIdentifierChar : Char -> Bool
-isIdentifierChar c = (isAlpha c) || (isDigit c) || c == '_'
+isIdentifierChar c = (isAlpha c) || (isDigit c) || c == '_' || c == '.'
 
 identifier : ProtoParser String
 identifier = (pure pack) <*> some (satisfy isIdentifierChar) <* spaces
@@ -98,7 +119,8 @@ enumDescriptor = (token "enum") *!> (do {
   name <- identifier
   values <- braces (many (enumValueDescriptor))
   (k ** values') <- return (listToVect values)
-  addEnum (MkEnumDescriptor name values')
+  scope <- getScope
+  addEnum (MkEnumDescriptor (scope ++ name) values')
 })
 
 messageType : ProtoParser FieldValueDescriptor
@@ -153,9 +175,14 @@ fieldDescriptor = do {
 messageDescriptor : ProtoParser ()
 messageDescriptor = (token "message") *!> (do {
   name <- identifier
-  fields <- braces (many fieldDescriptor)
-  (k ** fields') <- return (listToVect fields)
-  addMessage (MkMessageDescriptor name fields')
+  scope <- pushScope name
+  -- Parse fields and nested enum and message descriptors
+  fields <- braces (many ((fieldDescriptor >>= return . Just)
+                      <|> (messageDescriptor *> return Nothing)
+                      <|> (enumDescriptor *> return Nothing)))
+  setScope scope
+  (k ** fields') <- return (listToVect (mapMaybe (\x => x) fields))
+  addMessage (MkMessageDescriptor (scope ++ name) fields')
 })
 
 fileDescriptor : ProtoParser ()
@@ -168,7 +195,7 @@ runParser input = case output of
   where output : Result String ParserState
         output = evalState
           (execParserT (spaces *> fileDescriptor *> get) input)
-          (MkParserState [] [] [])
+          (MkParserState "" [] [])
 
 export parseFile : String -> Either String (List MessageDescriptor, List EnumDescriptor)
 parseFile input = case runParser input of

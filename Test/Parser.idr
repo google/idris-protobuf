@@ -24,16 +24,16 @@ import Protobuf.Util
 
 protoFileContents : String
 protoFileContents = unlines [
-  "enum PhoneType {MOBILE = 0; HOME = 1; WORK = 2;}",
-  "message PhoneNumber {",
-  "  required string number = 0;",
-  "  optional PhoneType type = 1;",
-  "}",
   "message Person {",
   "  required string name = 0;",
   "  required int32 id = 1;",
   "  optional string email = 2;",
-  "  repeated PhoneNumber phone = 3;",
+  "  message PhoneNumber {",
+  "    required string number = 0;",
+  "    enum PhoneType {MOBILE = 0; HOME = 1; WORK = 2;}",
+  "    optional Person.PhoneNumber.PhoneType type = 1;",
+  "  }",
+  "  repeated Person.PhoneNumber phone = 3;",
   "}",
   ""
 ]
