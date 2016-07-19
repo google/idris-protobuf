@@ -43,8 +43,6 @@ expectedFileDescriptor = ([PhoneNumber, Person], [PhoneType])
 
 allTests : IO ()
 allTests = runTests (MkTestFixture "Parser" [
-  MkTestCase "ParseFileDescriptor" (do {
-    parsed <- assertNotError $ parseFile protoFileContents
-    assertEq parsed expectedFileDescriptor
-  })
+  MkTestCase "ParseFileDescriptor"
+    (assertEq (parseFile protoFileContents) (Right expectedFileDescriptor))
 ])

@@ -26,23 +26,6 @@ Test = Either String
 failAssert : String -> Test a
 failAssert err = Left err
 
-||| Asserts that a Maybe value is not Nothing, and returns the value.
-assertNotNothing : Maybe a -> Test a
-assertNotNothing Nothing  = failAssert "assertNotNothing failed: value was Nothing"
-assertNotNothing (Just x) = return x
-
-||| Asserts that an Either String a, interpreted as an error monad, does not
-||| contain an error.
-assertNotError : Either String a -> Test a
-assertNotError (Left err)  = failAssert $ "assertNotError failed: value contained the error: " ++ err
-assertNotError (Right x) = return x
-
-assertError : Either String a -> String -> Test ()
-assertError (Left err') err = if err == err'
-  then return ()
-  else failAssert ("assertError failed: expected: " ++ err ++ ", got: " ++ err')
-assertError (Right _) err = failAssert "assertError failed: expected an error, got a result"
-
 assertEq : (Eq a, Show a) => (given : a) -> (expected : a) -> Test ()
 assertEq g e = if g == e
   then return ()
@@ -52,10 +35,6 @@ assertEq' : Eq a => (given : a) -> (expected : a) -> Test ()
 assertEq' g e = if g == e
     then return ()
     else failAssert "assertEq Failed"
-
-assertNotNil : List a -> Test (a, List a)
-assertNotNil Nil       = failAssert ("assertNotNil failed: list was Nil");
-assertNotNil (x :: xs) = return (x, xs)
 
 record TestCase where
   constructor MkTestCase

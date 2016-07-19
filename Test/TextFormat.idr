@@ -56,32 +56,29 @@ Jane = MkMessage [
 allTests : IO ()
 allTests = runTests (MkTestFixture "TextFormat" [
   MkTestCase "PrintJohn" (assertEq (printToTextFormat John) johnInTextFormat),
-  MkTestCase "ParseJohn" (do {
-    parsed <- assertNotError (parseFromTextFormat {d=Person} johnInTextFormat)
-    assertEq parsed John
-  }),
+  MkTestCase "ParseJohn"
+    (assertEq (parseFromTextFormat {d=Person} johnInTextFormat) (Right John)),
   MkTestCase "ParseMessageWithBadField"
-    (assertError
+    (assertEq
       (parseFromTextFormat {d=Person} "not_a_field: 1")
-      "at 1:14 expected:\n  An field in the message Person (no field named \"not_a_field\")"),
+      (Left "at 1:14 expected:\n  An field in the message Person (no field named \"not_a_field\")")),
   MkTestCase "ParseMessageWithMissingRequiredField"
-    (assertError
+    (assertEq
         (parseFromTextFormat {d=Person} "id: 1234")
-        "at 0:0 expected:\n  A valid message (The required field \"name\" was not set.)"),
-  MkTestCase "ParseMessageWithOverriddenRequiredField" (do {
-    parsed <- assertNotError $ parseFromTextFormat (johnInTextFormat ++ "name: \"Jane Doe\"\n")
-    assertEq parsed Jane
-  }),
-  MkTestCase "ParseDouble" (do {
-    parsed <- assertNotError $ parseFromTextFormat {d=MkMessageDescriptor "test" [
-      MkFieldDescriptor Required PBDouble "double_value" 0
-    ]} "double_value: -12.34"
-    assertEq parsed (MkMessage [-12.34])
-  }),
+        (Left "at 0:0 expected:\n  A valid message (The required field \"name\" was not set.)")),
+  MkTestCase "ParseMessageWithOverriddenRequiredField"
+    (assertEq (parseFromTextFormat (johnInTextFormat ++ "name: \"Jane Doe\"\n")) (Right Jane)),
+  MkTestCase "ParseDouble"
+    (assertEq
+      (parseFromTextFormat {d=MkMessageDescriptor "test" [
+        MkFieldDescriptor Required PBDouble "double_value" 0
+      ]} "double_value: -12.34")
+      (Right (MkMessage [-12.34]))),
   MkTestCase "ParseBool" (do {
-    parsed <- assertNotError $ parseFromTextFormat {d=MkMessageDescriptor "test" [
-      MkFieldDescriptor Required PBBool "bool_value" 0
-    ]} "bool_value: true"
-    assertEq parsed (MkMessage [True])
+    (assertEq
+      (parseFromTextFormat {d=MkMessageDescriptor "test" [
+        MkFieldDescriptor Required PBBool "bool_value" 0
+      ]} "bool_value: true")
+      (Right (MkMessage [True])))
   })
 ])
