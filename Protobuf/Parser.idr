@@ -87,13 +87,11 @@ isIdentifierChar : Char -> Bool
 isIdentifierChar c = (isAlpha c) || (isDigit c) || c == '_' || c == '.'
 
 identifier : ProtoParser String
-identifier = (pure pack) <*> some (satisfy isIdentifierChar) <* spaces
+identifier = (map pack (some (satisfy isIdentifierChar))) <* spaces
 
 nothingToErr : (errMsg : String) -> Maybe a -> ProtoParser a
 nothingToErr errMsg = maybe (fail errMsg) return
 
--- Number of field or enum
--- TODO: implement this
 nonNegative : ProtoParser Int
 nonNegative = do {
   digits <- some (satisfy isDigit)
