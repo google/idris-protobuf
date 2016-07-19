@@ -3,9 +3,9 @@ package protobuf
 opts = "-p lightyear"
 
 modules = Protobuf.Core
-        , Protobuf.FileDescriptor
-        , Protobuf.Eq
+        , Protobuf.Util
         , Protobuf.ParseUtils
+        , Protobuf.Printer
         , Protobuf.TextFormat
         , Protobuf.Parser
         , Protobuf

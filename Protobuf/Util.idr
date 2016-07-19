@@ -12,15 +12,24 @@
 ||| See the License for the specific language governing permissions and
 ||| limitations under the License.
 |||
-||| Equality for descriptors.  Equality for values isn't working so far.
+||| Equality and Show for descriptors.  Equality for values isn't working so
+||| far.
 
-module Protobuf.Eq
+module Protobuf.Util
 
 import Protobuf.Core
-import Protobuf.FileDescriptor
+import Protobuf.Printer
 
 %access export
 %default total
+
+||| Does an action for each element of a list.
+forEach : Monad m => (a -> m ()) -> List a -> m ()
+forEach _ Nil       = return ()
+forEach f (x :: xs) = do {
+  f x
+  forEach f xs
+}
 
 implementation Eq Label where
   Optional == Optional = True
@@ -74,6 +83,49 @@ mutual
     _ == _ = False
 
 
-implementation Eq FileDescriptor where
-  (MkFileDescriptor messages enums) == (MkFileDescriptor messages' enums') =
-    messages == messages' && enums == enums'
+implementation Show Label where
+  show Optional = "optional"
+  show Required = "required"
+  show Repeated = "repeated"
+
+printEnumValueDescriptor : EnumValueDescriptor -> Printer ()
+printEnumValueDescriptor (MkEnumValueDescriptor name value) =
+  printIndent *> print (name ++ " = " ++ (show value) ++ ";\n")
+
+printEnumDescriptor : EnumDescriptor -> Printer ()
+printEnumDescriptor (MkEnumDescriptor name values) =
+    print ("enum " ++ name  ++ " ") *> braces (forEach printEnumValueDescriptor (toList values))
+
+implementation Show EnumDescriptor where
+  show = runPrinter . printEnumDescriptor
+
+implementation Show FieldValueDescriptor where
+  show PBDouble = "double"
+  show PBFloat = "float"
+  show PBInt32 = "int32"
+  show PBInt64 = "int64"
+  show PBSInt32 = "sint32"
+  show PBSInt64 = "sint64"
+  show PBUInt32 = "uint32"
+  show PBUInt64 = "uint64"
+  show PBFixed32 = "fixed32"
+  show PBFixed64 = "fixed64"
+  show PBSFixed32 = "sfixed32"
+  show PBSFixed64 = "sfixed64"
+  show PBBool = "bool"
+  show PBString = "string"
+  show PBBytes = "bytes"
+  show (PBMessage m) = name m
+  show (PBEnum e) = name e
+
+printFieldDescriptor : FieldDescriptor -> Printer ()
+printFieldDescriptor (MkFieldDescriptor label ty name number) =
+  printIndent *> print (
+    (show label) ++ " " ++ (show ty) ++ " " ++ name ++ " = " ++ (show number) ++ ";\n")
+
+printMessageDescriptor : MessageDescriptor -> Printer ()
+printMessageDescriptor (MkMessageDescriptor name fields) =
+    print ("message " ++ name ++ " ") *> braces (forEach printFieldDescriptor (toList fields))
+
+implementation Show MessageDescriptor where
+  show = runPrinter . printMessageDescriptor

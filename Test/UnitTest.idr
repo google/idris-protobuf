@@ -16,6 +16,8 @@
 
 module Test.UnitTest
 
+import Protobuf.Util
+
 %access export
 
 public export Test : Type -> Type
@@ -75,14 +77,6 @@ record TestFixture where
   constructor MkTestFixture
   name : String
   tests : List TestCase
-
-||| Does an action for each element of a list.
-forEach : Monad m => (a -> m ()) -> List a -> m ()
-forEach _ Nil       = return ()
-forEach f (x :: xs) = do {
-  f x
-  forEach f xs
-}
 
 runTests : TestFixture -> IO ()
 runTests f = do {

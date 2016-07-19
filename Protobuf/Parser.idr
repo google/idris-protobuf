@@ -23,6 +23,7 @@
 module Protobuf.Parser
 
 import Data.String
+import Control.Monad.State
 
 import Lightyear
 import Lightyear.Char
@@ -30,13 +31,20 @@ import Lightyear.Strings
 import Lightyear.Combinators
 
 import Protobuf.Core
-import Protobuf.FileDescriptor
-import Protobuf.Lookup
 
-requiredSpace : Parser ()
+record ParserState where
+  constructor MkParserState
+  scope : List String
+  messages : List MessageDescriptor
+  enums : List EnumDescriptor
+
+ProtoParser : Type -> Type
+ProtoParser = ParserT String (State ParserState)
+
+requiredSpace : ProtoParser ()
 requiredSpace = space *> spaces *> return ()
 
-label : Parser Label
+label : ProtoParser Label
 label = (char 'o' >! string "ptional" *> requiredSpace *> return Optional)
     <|> (string "req" >! string "uired" *> requiredSpace *> return Required)
     <|> (string "rep" >! string "eated" *> requiredSpace *> return Repeated)
@@ -45,15 +53,15 @@ label = (char 'o' >! string "ptional" *> requiredSpace *> return Optional)
 isIdentifierChar : Char -> Bool
 isIdentifierChar c = (isAlpha c) || (isDigit c) || c == '_'
 
-identifier : Parser String
+identifier : ProtoParser String
 identifier = (pure pack) <*> some (satisfy isIdentifierChar) <* spaces
 
-nothingToErr : (errMsg : String) -> Maybe a -> Parser a
+nothingToErr : (errMsg : String) -> Maybe a -> ProtoParser a
 nothingToErr errMsg = maybe (fail errMsg) return
 
 -- Number of field or enum
 -- TODO: implement this
-nonNegative : Parser Int
+nonNegative : ProtoParser Int
 nonNegative = do {
   digits <- some (satisfy isDigit)
   nothingToErr "Could not parse digits" (parsePositive (pack digits))
@@ -64,7 +72,7 @@ listToVect Nil = (Z ** Nil)
 listToVect (x::xs) = let (k ** xs') = listToVect xs in
   (S k ** (x :: xs'))
 
-enumValueDescriptor : Parser EnumValueDescriptor
+enumValueDescriptor : ProtoParser EnumValueDescriptor
 enumValueDescriptor = do {
   name <- identifier
   token "="
@@ -73,7 +81,7 @@ enumValueDescriptor = do {
   return (MkEnumValueDescriptor name number)
 }
 
-enumDescriptor : Parser EnumDescriptor
+enumDescriptor : ProtoParser EnumDescriptor
 enumDescriptor = (token "enum") *!> (do {
   name <- identifier
   values <- braces (many (enumValueDescriptor))
@@ -81,44 +89,48 @@ enumDescriptor = (token "enum") *!> (do {
   return (MkEnumDescriptor name values')
 })
 
-messageType : FileDescriptor -> Parser FieldValueDescriptor
-messageType fd = do {
-  ty <- identifier
-  msg <- nothingToErr ("Could not find message " ++ ty) (findByName ty (messages fd))
-  return (PBMessage msg)
+messageType : ProtoParser FieldValueDescriptor
+messageType = do {
+  msgName <- identifier
+  state <- get
+  case (find (\x => name x == msgName) (messages state)) of
+    Nothing => fail $ "A message type (no message named " ++ msgName ++ ")"
+    Just msg => return (PBMessage msg)
 }
 
-enumType : FileDescriptor -> Parser FieldValueDescriptor
-enumType fd = do {
-  ty <- identifier
-  msg <- nothingToErr ("Could not find enum " ++ ty) (findByName ty (enums fd))
-  return (PBEnum msg)
+enumType : ProtoParser FieldValueDescriptor
+enumType = do {
+  enumName <- identifier
+  state <- get
+  case (find (\x => name x == enumName) (enums state)) of
+    Nothing => fail $ "An enum type (no enum named " ++ enumName ++ ")"
+    Just enum => return (PBEnum enum)
 }
 
-fieldValueDescriptor : FileDescriptor -> Parser FieldValueDescriptor
-fieldValueDescriptor fd = (token "double" *!> return PBDouble)
-                      <|> (token "float" *!> return PBFloat)
-                      <|> (token "int32" *!> return PBInt32)
-                      <|> (token "int64" *!> return PBInt64)
-                      <|> (token "uint32" *!> return PBUInt32)
-                      <|> (token "uint64" *!> return PBUInt64)
-                      <|> (token "sint32" *!> return PBSInt32)
-                      <|> (token "sint64" *!> return PBSInt64)
-                      <|> (token "fixed32" *!> return PBFixed32)
-                      <|> (token "fixed64" *!> return PBFixed64)
-                      <|> (token "sfixed32" *!> return PBSFixed32)
-                      <|> (token "sfixed64" *!> return PBSFixed64)
-                      <|> (token "bool" *!> return PBBool)
-                      <|> (token "string" *!> return PBString)
-                      <|> (token "bytes" *!> return PBBytes)
-                      <|> (messageType fd)
-                      <|> (enumType fd)
-                      <?> "The name of a message, enum or primitive type"
+fieldValueDescriptor : ProtoParser FieldValueDescriptor
+fieldValueDescriptor = (token "double" *!> return PBDouble)
+                    <|> (token "float" *!> return PBFloat)
+                    <|> (token "int32" *!> return PBInt32)
+                    <|> (token "int64" *!> return PBInt64)
+                    <|> (token "uint32" *!> return PBUInt32)
+                    <|> (token "uint64" *!> return PBUInt64)
+                    <|> (token "sint32" *!> return PBSInt32)
+                    <|> (token "sint64" *!> return PBSInt64)
+                    <|> (token "fixed32" *!> return PBFixed32)
+                    <|> (token "fixed64" *!> return PBFixed64)
+                    <|> (token "sfixed32" *!> return PBSFixed32)
+                    <|> (token "sfixed64" *!> return PBSFixed64)
+                    <|> (token "bool" *!> return PBBool)
+                    <|> (token "string" *!> return PBString)
+                    <|> (token "bytes" *!> return PBBytes)
+                    <|> messageType
+                    <|> enumType
+                    <?> "The name of a message, enum or primitive type"
 
-fieldDescriptor : FileDescriptor -> Parser FieldDescriptor
-fieldDescriptor fd = do {
+fieldDescriptor : ProtoParser FieldDescriptor
+fieldDescriptor = do {
   l <- label
-  ty <- fieldValueDescriptor fd
+  ty <- fieldValueDescriptor
   name <- identifier
   token "="
   number <- nonNegative
@@ -126,29 +138,43 @@ fieldDescriptor fd = do {
   return (MkFieldDescriptor l ty name number)
 }
 
-messageDescriptor : FileDescriptor -> Parser MessageDescriptor
-messageDescriptor fd = (token "message") *!> (do {
+messageDescriptor : ProtoParser MessageDescriptor
+messageDescriptor = (token "message") *!> (do {
   name <- identifier
-  fields <- braces (many (fieldDescriptor fd))
+  fields <- braces (many fieldDescriptor)
   (k ** fields') <- return (listToVect fields)
   return (MkMessageDescriptor name fields')
 })
 
-addMessageDescriptor : FileDescriptor -> Parser FileDescriptor
-addMessageDescriptor (MkFileDescriptor ms es) = do {
-  m <- messageDescriptor (MkFileDescriptor ms es)
-  return (MkFileDescriptor (ms ++ [m]) es)
+addMessageDescriptor : ProtoParser ()
+addMessageDescriptor = do {
+  m <- messageDescriptor
+  (MkParserState scope messages enums) <- get
+  put (MkParserState scope (messages ++ [m]) enums)
 }
 
-addEnumDescriptor : FileDescriptor -> Parser FileDescriptor
-addEnumDescriptor (MkFileDescriptor ms es) = do {
+addEnumDescriptor : ProtoParser ()
+addEnumDescriptor = do {
   e <- enumDescriptor
-  return (MkFileDescriptor ms (es ++ [e]))
+  (MkParserState scope messages enums) <- get
+  put (MkParserState scope messages (enums ++ [e]))
 }
 
-fileDescriptor : FileDescriptor -> Parser FileDescriptor
-fileDescriptor fd = (eof *> return fd) <|>
-  (((addMessageDescriptor fd) <|> (addEnumDescriptor fd)) >>= fileDescriptor)
+fileDescriptor : ProtoParser ()
+fileDescriptor = (eof *> return ())
+             <|> (addMessageDescriptor *> fileDescriptor)
+             <|> (addEnumDescriptor *> fileDescriptor)
 
-export parseFileDescriptor : String -> Either String FileDescriptor
-parseFileDescriptor = parse (spaces *> fileDescriptor (MkFileDescriptor [] []))
+runParser : String -> Either String ParserState
+runParser input = case output of
+    Success _ x => Right x
+    Failure es  => Left $ formatError input es
+  where output : Result String ParserState
+        output = evalState
+          (execParserT (spaces *> fileDescriptor *> get) input)
+          (MkParserState [] [] [])
+
+export parseFile : String -> Either String (List MessageDescriptor, List EnumDescriptor)
+parseFile input = case runParser input of
+  Left err => Left err
+  Right (MkParserState scope messages enums) => Right (messages, enums)

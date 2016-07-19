@@ -15,66 +15,18 @@
 module Protobuf.TextFormat
 
 import Data.String
-import Control.Monad.State
 
 import Lightyear
 import Lightyear.Char
 import Lightyear.Strings
 
 import Protobuf.Core
+import Protobuf.Printer
 import Protobuf.ParseUtils
-
-||| A state monad that stores the string so far, and the current indent.
-Printer : Type -> Type
-Printer = State (Nat, String)
-
-print : String -> Printer ()
-print s = do {
-  (indent, buffer) <- get
-  put (indent, buffer ++ s)
-}
-
-getIndent : Printer Nat
-getIndent = do {
-  (indent, buffer) <- get
-  return indent
-}
-
-putIndent : Nat -> Printer ()
-putIndent indent' = do {
-  (indent, buffer) <- get
-  put (indent', buffer)
-}
-
-||| Print the current indent.  Typically called at the start of a new line.
-printIndent : Printer ()
-printIndent = getIndent >>= (print . makeIndent) where
-  makeIndent : Nat -> String
-  makeIndent Z     = ""
-  makeIndent (S n) = "  " ++ (makeIndent n)
-
-||| Prints the expression in braces
-inBraces : Printer () -> Printer ()
-inBraces p = do {
-  print "{\n"
-  indent <- getIndent
-  putIndent (indent + 1)
-  p
-  putIndent indent
-  printIndent
-  print "}"
-}
+import Protobuf.Util
 
 printEnum : interpEnum d -> Printer ()
 printEnum {d=MkEnumDescriptor {k=k} _ values} i = print (name (index i values))
-
-||| Does an action for each element of a list.
-forEach : Monad m => (a -> m ()) -> List a -> m ()
-forEach _ Nil       = return ()
-forEach f (x :: xs) = do {
-  f x
-  forEach f xs
-}
 
 mutual
   printMessage : InterpMessage d -> Printer ()
@@ -123,11 +75,11 @@ mutual
   printFieldValue {d=PBBool} = print . toLower . show
   printFieldValue {d=PBString} = print . show
   printFieldValue {d=PBBytes} = print . show
-  printFieldValue {d=PBMessage _} = inBraces . printMessage
+  printFieldValue {d=PBMessage _} = braces . printMessage
   printFieldValue {d=PBEnum _} = printEnum
 
 export printToTextFormat : InterpMessage d -> String
-printToTextFormat x = assert_total $ snd (execState (printMessage x) (Z, ""))
+printToTextFormat x = assert_total $ runPrinter (printMessage x)
 
 export implementation Show (InterpMessage d) where
   show = printToTextFormat
