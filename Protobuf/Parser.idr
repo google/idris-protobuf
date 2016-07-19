@@ -161,9 +161,7 @@ addEnumDescriptor = do {
 }
 
 fileDescriptor : ProtoParser ()
-fileDescriptor = (eof *> return ())
-             <|> (addMessageDescriptor *> fileDescriptor)
-             <|> (addEnumDescriptor *> fileDescriptor)
+fileDescriptor = (many (addMessageDescriptor <|> addEnumDescriptor)) *> return ()
 
 runParser : String -> Either String ParserState
 runParser input = case output of
