@@ -152,10 +152,11 @@ idris --install protobuf.ipkg
 then load the Idris REPL with this package along with the test utils, with the
 command
 ```
-idris -p lightyear Protobuf.idr Test/Utils.idr
+idris -p lightyear -p protobuf Test/Utils.idr
 ```
 While in the REPL you can explore the package, e.g.
 ```
+:module protobuf
 *Test/Utils *Protobuf> printToTextFormat Test.Utils.John
 "name: \"John Doe\"\nid: 1234\nemail: \"jdoe@example.com\"\nphone: {\n  number: \"123-456-7890\"\n  type: HOME\n}\nphone: {\n  number: \"987-654-3210\"\n}\n" : String
 *Test/Utils *Protobuf> parseFromTextFormat {d=Test.Utils.Person} "name: \"Kester Tong\" id: 1234"
