@@ -34,7 +34,7 @@ print s = do {
 getIndent : Printer Nat
 getIndent = do {
   (indent, buffer) <- get
-  return indent
+  pure indent
 }
 
 putIndent : Nat -> Printer ()
