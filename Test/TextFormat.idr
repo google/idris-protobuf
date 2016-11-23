@@ -33,8 +33,7 @@ johnInTextFormat = unlines [
   "}",
   "phone: {",
   "  number: \"987-654-3210\"",
-  "}",
-  ""
+  "}"
 ]
 
 -- Implementing Eq (InterpMessage d) is proving difficult so for testing we
@@ -61,11 +60,11 @@ allTests = runTests (MkTestFixture "TextFormat" [
   MkTestCase "ParseMessageWithBadField"
     (assertEq
       (parseFromTextFormat {d=Person} "not_a_field: 1")
-      (Left "at 1:14 expected:\n  An field in the message Person (no field named \"not_a_field\")")),
+      (Left "at 1:14 expected:\n  An field in the message Person (no field named \"not_a_field\")\n")),
   MkTestCase "ParseMessageWithMissingRequiredField"
     (assertEq
         (parseFromTextFormat {d=Person} "id: 1234")
-        (Left "at 0:0 expected:\n  A valid message (The required field \"name\" was not set.)")),
+        (Left "at 0:0 expected:\n  A valid message (The required field \"name\" was not set.)\n")),
   MkTestCase "ParseMessageWithOverriddenRequiredField"
     (assertEq (parseFromTextFormat (johnInTextFormat ++ "name: \"Jane Doe\"\n")) (Right Jane)),
   MkTestCase "ParseDouble"

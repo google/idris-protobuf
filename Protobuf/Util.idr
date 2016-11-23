@@ -25,7 +25,7 @@ import Protobuf.Printer
 
 ||| Does an action for each element of a list.
 forEach : Monad m => (a -> m ()) -> List a -> m ()
-forEach _ Nil       = return ()
+forEach _ Nil       = pure ()
 forEach f (x :: xs) = do {
   f x
   forEach f xs

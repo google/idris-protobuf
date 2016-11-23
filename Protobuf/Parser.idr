@@ -58,13 +58,13 @@ pushScope : String -> ProtoParser String
 pushScope name = do {
   (MkParserState scope messages enums) <- get
   put (MkParserState (scope ++ name ++ ".") messages enums)
-  return scope
+  pure scope
 }
 
 getScope : ProtoParser String
 getScope = do {
   (MkParserState scope messages enums) <- get
-  return scope
+  pure scope
 }
 
 setScope : String -> ProtoParser ()
@@ -75,12 +75,12 @@ setScope scope = do {
 
 
 requiredSpace : ProtoParser ()
-requiredSpace = space *> spaces *> return ()
+requiredSpace = space *> spaces *> pure ()
 
 label : ProtoParser Label
-label = (char 'o' >! string "ptional" *> requiredSpace *> return Optional)
-    <|> (string "req" >! string "uired" *> requiredSpace *> return Required)
-    <|> (string "rep" >! string "eated" *> requiredSpace *> return Repeated)
+label = (char 'o' >! string "ptional" *> requiredSpace *> pure Optional)
+    <|> (string "req" >! string "uired" *> requiredSpace *> pure Required)
+    <|> (string "rep" >! string "eated" *> requiredSpace *> pure Repeated)
     <?> "Label"
 
 isIdentifierChar : Char -> Bool
@@ -90,7 +90,7 @@ identifier : ProtoParser String
 identifier = (map pack (some (satisfy isIdentifierChar))) <* spaces
 
 nothingToErr : (errMsg : String) -> Maybe a -> ProtoParser a
-nothingToErr errMsg = maybe (fail errMsg) return
+nothingToErr errMsg = maybe (fail errMsg) pure
 
 nonNegative : ProtoParser Int
 nonNegative = do {
@@ -109,14 +109,14 @@ enumValueDescriptor = do {
   token "="
   number <- nonNegative
   token ";"
-  return (MkEnumValueDescriptor name number)
+  pure (MkEnumValueDescriptor name number)
 }
 
 enumDescriptor : ProtoParser ()
 enumDescriptor = (token "enum") *!> (do {
   name <- identifier
   values <- braces (many (enumValueDescriptor))
-  (k ** values') <- return (listToVect values)
+  (k ** values') <- pure (listToVect values)
   scope <- getScope
   addEnum (MkEnumDescriptor (scope ++ name) values')
 })
@@ -127,7 +127,7 @@ messageType = do {
   state <- get
   case (find (\x => name x == msgName) (messages state)) of
     Nothing => fail $ "A message type (no message named " ++ msgName ++ ")"
-    Just msg => return (PBMessage msg)
+    Just msg => pure (PBMessage msg)
 }
 
 enumType : ProtoParser FieldValueDescriptor
@@ -136,25 +136,25 @@ enumType = do {
   state <- get
   case (find (\x => name x == enumName) (enums state)) of
     Nothing => fail $ "An enum type (no enum named " ++ enumName ++ ")"
-    Just enum => return (PBEnum enum)
+    Just enum => pure (PBEnum enum)
 }
 
 fieldValueDescriptor : ProtoParser FieldValueDescriptor
-fieldValueDescriptor = (token "double" *!> return PBDouble)
-                    <|> (token "float" *!> return PBFloat)
-                    <|> (token "int32" *!> return PBInt32)
-                    <|> (token "int64" *!> return PBInt64)
-                    <|> (token "uint32" *!> return PBUInt32)
-                    <|> (token "uint64" *!> return PBUInt64)
-                    <|> (token "sint32" *!> return PBSInt32)
-                    <|> (token "sint64" *!> return PBSInt64)
-                    <|> (token "fixed32" *!> return PBFixed32)
-                    <|> (token "fixed64" *!> return PBFixed64)
-                    <|> (token "sfixed32" *!> return PBSFixed32)
-                    <|> (token "sfixed64" *!> return PBSFixed64)
-                    <|> (token "bool" *!> return PBBool)
-                    <|> (token "string" *!> return PBString)
-                    <|> (token "bytes" *!> return PBBytes)
+fieldValueDescriptor = (token "double" *!> pure PBDouble)
+                    <|> (token "float" *!> pure PBFloat)
+                    <|> (token "int32" *!> pure PBInt32)
+                    <|> (token "int64" *!> pure PBInt64)
+                    <|> (token "uint32" *!> pure PBUInt32)
+                    <|> (token "uint64" *!> pure PBUInt64)
+                    <|> (token "sint32" *!> pure PBSInt32)
+                    <|> (token "sint64" *!> pure PBSInt64)
+                    <|> (token "fixed32" *!> pure PBFixed32)
+                    <|> (token "fixed64" *!> pure PBFixed64)
+                    <|> (token "sfixed32" *!> pure PBSFixed32)
+                    <|> (token "sfixed64" *!> pure PBSFixed64)
+                    <|> (token "bool" *!> pure PBBool)
+                    <|> (token "string" *!> pure PBString)
+                    <|> (token "bytes" *!> pure PBBytes)
                     <|> messageType
                     <|> enumType
                     <?> "The name of a message, enum or primitive type"
@@ -167,7 +167,7 @@ fieldDescriptor = do {
   token "="
   number <- nonNegative
   token ";"
-  return (MkFieldDescriptor l ty name number)
+  pure (MkFieldDescriptor l ty name number)
 }
 
 messageDescriptor : ProtoParser ()
@@ -175,11 +175,11 @@ messageDescriptor = (token "message") *!> (do {
   name <- identifier
   scope <- pushScope name
   -- Parse fields and nested enum and message descriptors
-  fields <- braces (many ((fieldDescriptor >>= return . Just)
-                      <|> (messageDescriptor *> return Nothing)
-                      <|> (enumDescriptor *> return Nothing)))
+  fields <- braces (many ((fieldDescriptor >>= pure . Just)
+                      <|> (messageDescriptor *> pure Nothing)
+                      <|> (enumDescriptor *> pure Nothing)))
   setScope scope
-  (k ** fields') <- return (listToVect (mapMaybe (\x => x) fields))
+  (k ** fields') <- pure (listToVect (mapMaybe (\x => x) fields))
   addMessage (MkMessageDescriptor (scope ++ name) fields')
 })
 

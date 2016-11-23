@@ -28,12 +28,12 @@ failAssert err = Left err
 
 assertEq : (Eq a, Show a) => (given : a) -> (expected : a) -> Test ()
 assertEq g e = if g == e
-  then return ()
+  then pure ()
   else failAssert ("assertEq failed: got " ++ (show g) ++ ", expected " ++ (show e))
 
 assertEq' : Eq a => (given : a) -> (expected : a) -> Test ()
 assertEq' g e = if g == e
-    then return ()
+    then pure ()
     else failAssert "assertEq Failed"
 
 record TestCase where
