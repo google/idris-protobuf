@@ -34,7 +34,7 @@ mutual
     printFields fields
 
   printFields : InterpFields d -> Printer ()
-  printFields {d=Nil} Nil = return ()
+  printFields {d=Nil} Nil = pure ()
   printFields {d=f::fs} (x::xs) = do {
     printField x
     printFields xs
@@ -42,7 +42,7 @@ mutual
 
   printField : interpField d -> Printer ()
   printField {d=MkFieldDescriptor Optional _ name number} =
-    maybe (return ()) (printSingleFieldValue name)
+    maybe (pure ()) (printSingleFieldValue name)
   printField {d=MkFieldDescriptor Required _ name number} =
     (printSingleFieldValue name)
   printField {d=MkFieldDescriptor Repeated _ name number} =
@@ -96,7 +96,7 @@ parseString = do {
   chars <- many (satisfy (\c => c /= '"'))
   char '"'
   spaces
-  return (pack chars)
+  pure (pack chars)
 }
 
 parseInteger : Parser Integer
@@ -105,7 +105,7 @@ parseInteger = do {
   spaces
   case parseInteger (pack chars) of
     Nothing => fail $ "Could not parse " ++ (pack chars) ++ " as an integer"
-    Just x => return x
+    Just x => pure x
 }
 
 parseDouble : Parser Double
@@ -114,12 +114,12 @@ parseDouble = do {
   spaces
   case parseDouble (pack chars) of
     Nothing => fail $ "Could not parse " ++ (pack chars) ++ " as a double"
-    Just x => return x
+    Just x => pure x
 }
 
 parseBool : Parser Bool
-parseBool = ((char 't' *!> token "rue" *> return True)
-        <|> (char 'f' *!> token "alse" *> return False))
+parseBool = ((char 't' *!> token "rue" *> pure True)
+        <|> (char 'f' *!> token "alse" *> pure False))
         <?> "A boolean value (\"true\" or \"false\")"
 
 parseEnum : Parser (interpEnum d)
@@ -130,7 +130,7 @@ parseEnum {d=MkEnumDescriptor enumName values} = do {
     Nothing => fail (
       "An field in the enum " ++ enumName ++ " (no field named " ++
       (show (pack chars)) ++ ")")
-    Just i => return i
+    Just i => pure i
 }
 
 mutual
@@ -139,7 +139,7 @@ mutual
     xs <- parseFields msgName
     case messageFromFieldList {fields=fields} xs of
       Left err => fail ("A valid message (" ++ err ++ ")")
-      Right fs => return (MkMessage fs)
+      Right fs => pure (MkMessage fs)
   }
 
   parseFields : (msgName : String) -> Parser (FieldList d)
@@ -154,7 +154,7 @@ mutual
           (show (pack chars)) ++ ")")
         Just i => do {
           v <- parseField
-          return (i ** v)
+          pure (i ** v)
         }
     })
   })

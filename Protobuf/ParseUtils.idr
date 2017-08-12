@@ -53,7 +53,7 @@ fieldFromFieldList {d=MkFieldDescriptor Required _ name _} xs = case (last' xs) 
 fieldFromFieldList {d=MkFieldDescriptor Repeated _ _ _} xs = Right xs
 
 export messageFromFieldList : FieldList fields -> Either String (InterpFields fields)
-messageFromFieldList {fields=Nil} _ = return Nil
+messageFromFieldList {fields=Nil} _ = pure Nil
 messageFromFieldList {fields=f::fs} xs = let (ys, zs) = reduceFieldList xs in
   case fieldFromFieldList ys of
     Left err => Left err
