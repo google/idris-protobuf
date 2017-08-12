@@ -23,19 +23,18 @@ import Protobuf.TextFormat
 %default total
 
 johnInTextFormat : String
-johnInTextFormat = unlines [
-  "name: \"John Doe\"",
-  "id: 1234",
-  "email: \"jdoe@example.com\"",
-  "phone: {",
-  "  number: \"123-456-7890\"",
-  "  type: HOME",
-  "}",
-  "phone: {",
-  "  number: \"987-654-3210\"",
-  "}",
-  ""
-]
+johnInTextFormat =
+  """name: "John Doe"
+id: 1234
+email: "jdoe@example.com"
+phone: {
+  number: "123-456-7890"
+  type: HOME
+}
+phone: {
+  number: "987-654-3210"
+}
+"""
 
 -- Implementing Eq (InterpMessage d) is proving difficult so for testing we
 -- implement it by serializing to text format and comparing.
@@ -61,11 +60,13 @@ allTests = runTests (MkTestFixture "TextFormat" [
   MkTestCase "ParseMessageWithBadField"
     (assertEq
       (parseFromTextFormat {d=Person} "not_a_field: 1")
-      (Left "at 1:14 expected:\n  An field in the message Person (no field named \"not_a_field\")")),
+      (Left """At 1:14:
+	An field in the message Person (no field named "not_a_field")""")),
   MkTestCase "ParseMessageWithMissingRequiredField"
     (assertEq
         (parseFromTextFormat {d=Person} "id: 1234")
-        (Left "at 0:0 expected:\n  A valid message (The required field \"name\" was not set.)")),
+        (Left """At 1:9:
+	A valid message (The required field "name" was not set.)""")),
   MkTestCase "ParseMessageWithOverriddenRequiredField"
     (assertEq (parseFromTextFormat (johnInTextFormat ++ "name: \"Jane Doe\"\n")) (Right Jane)),
   MkTestCase "ParseDouble"
